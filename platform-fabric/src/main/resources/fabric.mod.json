@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "forge_solo_subseason",
+  "version": "${version}",
+  "name": "Forge Solo Subseason",
+  "description": "Server-authoritative classes, skills, mana, and visual skill panel for Fabric.",
+  "authors": ["kammonusinno-ops"],
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.forgemagic.fabric.ForgeSoloFabric"],
+    "client": ["com.forgemagic.fabric.client.ForgeSoloClient"]
+  },
+  "mixins": ["forge_solo.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

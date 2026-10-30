@@ -1,0 +1,24 @@
+[Unit]
+Description=Fern Control Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fern
+Group=fern
+WorkingDirectory=/opt/fern-control-agent
+EnvironmentFile=/etc/fern-control-agent.env
+ExecStart=/usr/bin/node /opt/fern-control-agent/src/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/fern-control-agent
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

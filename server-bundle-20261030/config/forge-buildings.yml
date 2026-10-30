@@ -1,0 +1,18 @@
+# Add building codes here when ready. Claims and effect purges remain fail-closed.
+# Coordinates are inclusive and dimension names use Minecraft identifiers.
+buildings: []
+
+# Example shape only; do not uncomment without replacing the coordinates:
+# buildings:
+#   - id: town-hall
+#     world: minecraft:overworld
+#     min-x: 0
+#     min-y: 60
+#     min-z: 0
+#     max-x: 20
+#     max-y: 100
+#     max-z: 20
+#     purge-effects:
+#       - tree-fell
+#       - area-mine
+#       - ore-pull

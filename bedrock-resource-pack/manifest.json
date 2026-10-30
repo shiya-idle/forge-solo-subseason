@@ -1,0 +1,31 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Forge Solo Visuals \u2014 Fern",
+    "description": "Bedrock visuals for Fern via Geyser/Floodgate. HUD values remain server-authoritative.",
+    "uuid": "c3a11568-f0cd-4236-8fd5-53783668d0ee",
+    "pack_scope": "world",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "description": "Fern Bedrock resource assets",
+      "type": "resources",
+      "uuid": "022e3e35-65a3-48c3-9b12-3c653d8f7f48",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

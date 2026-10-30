@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "forge_solo:font/forge_glyphs.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "\ue000\ue001\ue002\ue003"
+      ]
+    }
+  ]
+}

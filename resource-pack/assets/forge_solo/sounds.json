@@ -1,0 +1,50 @@
+{
+  "cast.nature": {
+    "sounds": [
+      {
+        "name": "forge_solo:cast_nature",
+        "volume": 0.65
+      }
+    ]
+  },
+  "cast.arcane": {
+    "sounds": [
+      {
+        "name": "forge_solo:cast_arcane",
+        "volume": 0.65
+      }
+    ]
+  },
+  "cast.radiant": {
+    "sounds": [
+      {
+        "name": "forge_solo:cast_radiant",
+        "volume": 0.65
+      }
+    ]
+  },
+  "cast.shadow": {
+    "sounds": [
+      {
+        "name": "forge_solo:cast_shadow",
+        "volume": 0.65
+      }
+    ]
+  },
+  "impact": {
+    "sounds": [
+      {
+        "name": "forge_solo:impact",
+        "volume": 0.75
+      }
+    ]
+  },
+  "notice": {
+    "sounds": [
+      {
+        "name": "forge_solo:notice",
+        "volume": 0.75
+      }
+    ]
+  }
+}

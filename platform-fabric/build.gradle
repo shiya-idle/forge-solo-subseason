@@ -1,0 +1,35 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.18-SNAPSHOT'
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        "forge_solo_subseason" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.fabric_minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation project(':core-api')
+    implementation project(':module-skills')
+    implementation project(':module-claims')
+    implementation 'org.yaml:snakeyaml:2.4'
+}
+
+processResources {
+    filesMatching('fabric.mod.json') { expand(version: project.version) }
+}
+
+tasks.withType(JavaCompile).configureEach { it.options.release = 25 }
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}

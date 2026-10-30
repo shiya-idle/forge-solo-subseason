@@ -1,0 +1,59 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "forge_solo.cast_arcane": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/cast_arcane",
+          "volume": 0.8
+        }
+      ]
+    },
+    "forge_solo.cast_nature": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/cast_nature",
+          "volume": 0.8
+        }
+      ]
+    },
+    "forge_solo.cast_radiant": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/cast_radiant",
+          "volume": 0.8
+        }
+      ]
+    },
+    "forge_solo.cast_shadow": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/cast_shadow",
+          "volume": 0.8
+        }
+      ]
+    },
+    "forge_solo.impact": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/impact",
+          "volume": 0.8
+        }
+      ]
+    },
+    "forge_solo.notice": {
+      "category": "player",
+      "sounds": [
+        {
+          "name": "sounds/notice",
+          "volume": 0.8
+        }
+      ]
+    }
+  }
+}

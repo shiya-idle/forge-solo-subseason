@@ -1,0 +1,8 @@
+Minecraft: 26.3
+Java: 25+
+Fabric Loader: 0.19.5
+Fabric Installer/server launcher: 1.0.3
+Fabric API: 0.165.0+26.3
+Fern mod JAR: mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
+Chunky: install a Minecraft 26.3-compatible Fabric build separately if needed
+Geyser/Floodgate: optional, required for Bedrock connectivity
