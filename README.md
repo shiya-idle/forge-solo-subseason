@@ -142,3 +142,7 @@ Never commit private `fern-config.php`, filled `.env` files, AWS access keys, PE
 11. Host and verify the Java resource pack over HTTPS.
 12. Configure and test the Control Agent only after Minecraft is stable.
 13. Connect the ReadySpace PHP bridge through the authenticated private path; never expose 8787.
+
+## Dedicated step-by-step file
+
+For the complete phone-only instance rebuild and Fern connection procedure, use [`docs/PHONE-ONLY-EC2-REBUILD.md`](docs/PHONE-ONLY-EC2-REBUILD.md).
