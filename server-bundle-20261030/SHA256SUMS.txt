@@ -1,5 +1,5 @@
 de880738a8e8976d0a3e26c97765ac50b8c46a6c8a2aae9cfe713d2a9b794285  fabric-server-launch.jar
 18442e2ad466d6ef41c37dbb4cb68495e6ca6658b1f1ee9be76143d155ef2c88  mods/fabric-api-0.165.0+26.3.jar
-d528bddd4d8be84d1f28f63aa4d30726c78cae4e8ad2464c6c6544322387cbc4  mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
+c8cb4f1363cd55be1c14f409ef5875c3884661d226d676cdb4125771868168dc  mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
 bdaaa0143d7c192397f3f7e2c0f2ed4c97f0e6d55f600c224bbb4dee1ef89bc5  resource-packs/forge-solo-visuals-26.3.zip
 528b647a3d598fa3b25d6b50e7a5c9152dff1ed979b7af5fdd2c55e2724cda24  resource-packs/forge-solo-bedrock-26.3.mcpack

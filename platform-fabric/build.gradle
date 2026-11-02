@@ -20,6 +20,13 @@ dependencies {
     implementation project(':module-skills')
     implementation project(':module-claims')
     implementation 'org.yaml:snakeyaml:2.4'
+
+    // These are runtime libraries used directly by the Fabric entrypoint.
+    // Nest them in the distributable mod JAR so a server only needs the one Fern JAR.
+    include project(':core-api')
+    include project(':module-skills')
+    include project(':module-claims')
+    include 'org.yaml:snakeyaml:2.4'
 }
 
 processResources {
