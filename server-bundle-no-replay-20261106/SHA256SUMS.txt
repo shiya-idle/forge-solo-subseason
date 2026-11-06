@@ -3,7 +3,7 @@
 98901e9700f896399309ce95fc6a10a18dc6f5b53e6e3f26210196e6a713c6dc  ./README-SERVER-BUNDLE.md
 c79fca5fbaa5cf48c492e6230310d43144af42aa2d412436317bff0af62f1d76  ./REQUIRED-VERSIONS.txt
 ba9f91f42daaa509f6aabc975ff02fe3e2bc6cca653ab863c00c02a06c6a1b89  ./config/forge-buildings.yml
-ba0c2b2f275e10b03084e8ca351149f1da124e88e53679065327283e244b0251  ./config/forge-solo-skills.yml
+d1beb928e9231d346e20ab6142f75335783e9d774c8802b73ce22283a36351ef  ./config/forge-solo-skills.yml
 7a6013830c1115aa4c088474a8fff31e068c2f9e5a2cf5c65cac8bd6be9644b9  ./config/forge-solo-visuals-server.properties
 b9ec56bf106e7d18cd49a18b21ec0495ba0ff45d7ba03882556ef2443e90f928  ./config/server.properties.example
 9aa54863483f8d03da9e49451133e30ace245dbc01601bf0fc7735af06c40c16  ./deploy/fern-control-agent/.env.example
@@ -17,6 +17,7 @@ f7361caf1dd95b679b9597055e42024c3f93d4e75035d0b50080ed151ac8765e  ./deploy/fern-
 279239b3299b768dabd8c8242d6161aafc937842377c063e5e8b5516673d1969  ./docs/AWS-VM-PHONE-ONLY-NO-PANEL.md
 2e18503aa86568eb52786c76006e58f101fb3e4a6490051c7b71820bc966acd1  ./docs/BEDROCK-PACK-AND-BORDER-SETUP.md
 912a5bb390d39cf81a2621a8f22a87e085bbe7eed6b7f40df099510214d28615  ./docs/BEDROCK-REGISTRY-COMPATIBILITY.md
+7a732225185562eb12a67ec473b399caf4690001b6c455445509310cceede82b  ./docs/BEDROCK-SKILLS-AND-THIRST.md
 362bb8b4246dfdf531265ab9edf32082306e7018963ac245a42dd4bf023f65ab  ./docs/CLIENT-COMPANION-SETUP.md
 97f190a70cd752e2bd2ac94d5c1cf0e49532f0732d16951f85fdf0e8ea5000ad  ./docs/COMBIROLLS.md
 eaf32b6e4baa84e422e2227196818f1252342d3edb52be1973ad250dfb28b942  ./docs/NO-REPLAY-VARIANT.md
@@ -26,6 +27,6 @@ aaa7202be8c48df1310a78c3916e2bf4cc2261bed07d94b8bc57faad74ee2271  ./docs/WAYPOIN
 afcb725ea713cd6e20dea7efd80889a3ac7d335b0541f31156013c7dbc0ed4ee  ./docs/WORLD-BORDER-1M.md
 de880738a8e8976d0a3e26c97765ac50b8c46a6c8a2aae9cfe713d2a9b794285  ./fabric-server-launch.jar
 18442e2ad466d6ef41c37dbb4cb68495e6ca6658b1f1ee9be76143d155ef2c88  ./mods/fabric-api-0.165.0+26.3.jar
-ad611fcd1bd1b0968d812b92b58af34a704215bd3e8529e002b3a086aa8c354c  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
+09ff9b3e5ec3747b22a38c46b022511a80bcde98fb50ad79cd289f807e84caee  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
 528b647a3d598fa3b25d6b50e7a5c9152dff1ed979b7af5fdd2c55e2724cda24  ./resource-packs/forge-solo-bedrock-26.3.mcpack
 bdaaa0143d7c192397f3f7e2c0f2ed4c97f0e6d55f600c224bbb4dee1ef89bc5  ./resource-packs/forge-solo-visuals-26.3.zip

@@ -92,10 +92,11 @@ health-bar:
 thirst:
   enabled: true
   maximum: 100.0
-  drain-per-second: 0.75
+  drain-per-second: 0.35
   health-drain-when-empty-percent-per-second: 2.0
   restore-per-water-bottle: 35.0
-  accepted-items: [GLASS_BOTTLE, POTION]
+  accepted-items: [GLASS_BOTTLE, POTION, SPLASH_POTION]
+  refill-source: water-contact-or-plain-water-potion
 
 quality:
   default: medium

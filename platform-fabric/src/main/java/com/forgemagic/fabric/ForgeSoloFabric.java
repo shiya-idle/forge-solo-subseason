@@ -96,6 +96,7 @@ public final class ForgeSoloFabric implements ModInitializer {
             ServerPlayer player = handler.getPlayer();
             progression.restore(player);
             skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID()));
+            installDefaultBindings(player);
             if (!BedrockCompatibility.isBedrockPlayer(player.getUUID()) && server.isDedicatedServer()) {
                 pendingCompanions.put(player.getUUID(), new PendingCompanion(java.util.UUID.randomUUID().toString(), System.currentTimeMillis() + 15_000L));
             } else if (!server.isDedicatedServer()) {
@@ -109,7 +110,9 @@ public final class ForgeSoloFabric implements ModInitializer {
         });
         UseItemCallback.EVENT.register((player, level, hand) -> {
             if (!(player instanceof ServerPlayer serverPlayer) || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
-            return thirst.drinkWaterBottle(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            if (thirst.drinkWaterBottle(serverPlayer)) return InteractionResult.SUCCESS;
+            thirst.splashWaterPotion(serverPlayer);
+            return InteractionResult.PASS;
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("skills")
@@ -274,12 +277,32 @@ public final class ForgeSoloFabric implements ModInitializer {
         LOGGER.info("Broadcast notice: {} — {}", title, message);
         return 1;
     }
-    private int showPanel(ServerPlayer player) { ClassId clazz = config.defaultClass(); var skills = ContentCatalog.routeSkills(clazz); player.sendSystemMessage(Component.literal("§2Forge Skills §8| §fMana " + manaText(player))); player.sendSystemMessage(Component.literal("§7Two-row skill panel slots: §f1–18")); for (int i = 0; i < Math.min(18, skills.size()); i++) { SkillDefinition skill = skills.get(i); String assigned = bindings.getOrDefault(player.getUUID(), Map.of()).get(i + 1); player.sendSystemMessage(Component.literal("§a[" + (i + 1) + "] §f" + skill.displayName() + " §8(" + skill.id() + ")" + (assigned == null ? "" : " §b• bound"))); } return 1; }
+    private int showPanel(ServerPlayer player) { ClassId clazz = config.defaultClass(); var skills = ContentCatalog.routeSkills(clazz); installDefaultBindings(player); player.sendSystemMessage(Component.literal("§2Forge Skills Panel §8| §fMana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID()))); player.sendSystemMessage(Component.literal("§7Bedrock HUD slots are visible in the action bar. Cast with §f/skills cast <id>§7.")); for (int i = 0; i < Math.min(18, skills.size()); i++) { SkillDefinition skill = skills.get(i); String assigned = bindings.getOrDefault(player.getUUID(), Map.of()).get(i + 1); player.sendSystemMessage(Component.literal("§a[" + (i + 1) + "] §f" + skill.displayName() + " §8(" + skill.id() + ")" + (assigned == null ? "" : " §b• bound"))); } return 1; }
     private int bind(ServerPlayer player, int slot, String skillId) { if (ContentCatalog.routeSkills(config.defaultClass()).stream().noneMatch(skill -> skill.id().equals(skillId))) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>()).put(slot, skillId); player.sendSystemMessage(Component.literal("§aBound §f" + skillId + " §ato slot §f" + slot + "§a.")); return 1; }
     private int unbind(ServerPlayer player, int slot) { Map<Integer, String> playerBindings = bindings.get(player.getUUID()); if (playerBindings != null) playerBindings.remove(slot); player.sendSystemMessage(Component.literal("§7Cleared skill slot §f" + slot + "§7.")); return 1; }
     private int cast(ServerPlayer player, String skillId) { SkillDefinition skill = ContentCatalog.routeSkills(config.defaultClass()).stream().filter(candidate -> candidate.id().equals(skillId)).findFirst().orElse(null); if (skill == null) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID())); return effects.cast(player, skill) ? 1 : 0; }
     private int setManaHud(ServerPlayer player, boolean enabled) { settings.put(player.getUUID(), new PlayerSettings(enabled)); player.sendSystemMessage(Component.literal(enabled ? "§aMana indicator enabled." : "§7Mana indicator disabled.")); return 1; }
-    private void sendLegacyHud(ServerPlayer player) { player.sendSystemMessage(Component.literal("§c❤ " + healthText(player) + " §b✦ " + manaText(player) + " §3💧 " + thirst.bar(player.getUUID())), true); }
+    private void sendLegacyHud(ServerPlayer player) {
+        String skills = bedrockSkillStrip(player);
+        player.sendSystemMessage(Component.literal("§c❤ " + healthText(player) + " §b✦ " + manaText(player) + " §3💧 " + thirst.bar(player.getUUID()) + skills), true);
+    }
+    private String bedrockSkillStrip(ServerPlayer player) {
+        StringBuilder out = new StringBuilder(" §eSkills:");
+        Map<Integer, String> playerBindings = bindings.getOrDefault(player.getUUID(), Map.of());
+        var skills = ContentCatalog.routeSkills(config.defaultClass());
+        for (int slot = 1; slot <= 6; slot++) {
+            String id = playerBindings.get(slot);
+            if (id == null || id.isBlank()) continue;
+            String label = skills.stream().filter(skill -> skill.id().equals(id)).map(SkillDefinition::displayName).findFirst().orElse(id);
+            out.append(" §f[").append(slot).append(" ").append(label).append("]");
+        }
+        return out.append(" §8/skills").toString();
+    }
+    private void installDefaultBindings(ServerPlayer player) {
+        Map<Integer, String> playerBindings = bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>());
+        var skills = ContentCatalog.routeSkills(config.defaultClass());
+        for (int slot = 1; slot <= Math.min(6, skills.size()); slot++) playerBindings.putIfAbsent(slot, skills.get(slot - 1).id());
+    }
     private String hudSnapshot(ServerPlayer player) {
         ManaState state = skillRuntime.mana(player.getUUID());
         double mana = state == null ? 100.0 : state.current();
