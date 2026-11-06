@@ -27,10 +27,14 @@ public final class FabricSkillEffects {
     }
 
     public boolean cast(ServerPlayer player, SkillDefinition skill) {
+        return cast(player, skill, 1, 1);
+    }
+
+    public boolean cast(ServerPlayer player, SkillDefinition skill, int playerLevel, int skillLevel) {
         ClaimsService.ClaimBlock location = new ClaimsService.ClaimBlock(player.level().dimension().identifier().toString(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
         String effectId = skill.id().toLowerCase(java.util.Locale.ROOT);
         if (claims.shouldPurgeEffect(location, effectId) || claims.shouldPurgeEffect(location, skill.action().name().toLowerCase(java.util.Locale.ROOT))) { player.sendSystemMessage(Component.literal("§cThis skill effect is purged inside a protected mod building.")); return false; }
-        var ticket = runtime.beginCast(player.getUUID(), skill, 1, 1, 0, 0);
+        var ticket = runtime.beginCast(player.getUUID(), skill, playerLevel, skillLevel, 0, 0);
         if (ticket.isEmpty()) { player.sendSystemMessage(Component.literal("§cSkill unavailable: not enough mana or still cooling down.")); return false; }
         try {
             PvpTargetingEngine.Resolution resolution = targeting.resolve(player, skill);

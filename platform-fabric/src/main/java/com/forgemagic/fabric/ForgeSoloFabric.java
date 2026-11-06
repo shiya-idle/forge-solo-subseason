@@ -57,6 +57,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private final CombirollService combirolls = new CombirollService();
     private final FernWaypointService waypoints = new FernWaypointService();
     private final ThirstService thirst = new ThirstService();
+    private FernAdminPolicy adminPolicy;
     private final Map<UUID, QualityProfile> quality = new ConcurrentHashMap<>();
     private final Map<UUID, PendingCompanion> pendingCompanions = new ConcurrentHashMap<>();
     private final Map<UUID, String> readyCompanions = new ConcurrentHashMap<>();
@@ -68,6 +69,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         ForgeSoloPayloads.registerCommon();
         ForgeSoloSounds.register();
         config = FabricSkillConfig.load();
+        adminPolicy = FernAdminPolicy.load();
         serverStartedAtMillis = loadServerStartedAtMillis();
         difficulty = new ExtremeNightmareService(nightmareUnlocked());
         claims = new ImmutableClaimsService(config.purgeEffectsOnModBuildings());
@@ -94,6 +96,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
+            adminPolicy.apply(server, player);
             progression.restore(player);
             skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID()));
             installDefaultBindings(player);
@@ -278,9 +281,9 @@ public final class ForgeSoloFabric implements ModInitializer {
         return 1;
     }
     private int showPanel(ServerPlayer player) { ClassId clazz = config.defaultClass(); var skills = ContentCatalog.routeSkills(clazz); installDefaultBindings(player); player.sendSystemMessage(Component.literal("§2Forge Skills Panel §8| §fMana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID()))); player.sendSystemMessage(Component.literal("§7Bedrock HUD slots are visible in the action bar. Cast with §f/skills cast <id>§7.")); for (int i = 0; i < Math.min(18, skills.size()); i++) { SkillDefinition skill = skills.get(i); String assigned = bindings.getOrDefault(player.getUUID(), Map.of()).get(i + 1); player.sendSystemMessage(Component.literal("§a[" + (i + 1) + "] §f" + skill.displayName() + " §8(" + skill.id() + ")" + (assigned == null ? "" : " §b• bound"))); } return 1; }
-    private int bind(ServerPlayer player, int slot, String skillId) { if (ContentCatalog.routeSkills(config.defaultClass()).stream().noneMatch(skill -> skill.id().equals(skillId))) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>()).put(slot, skillId); player.sendSystemMessage(Component.literal("§aBound §f" + skillId + " §ato slot §f" + slot + "§a.")); return 1; }
+    private int bind(ServerPlayer player, int slot, String skillId) { if (ContentCatalog.routeSkills(classFor(player)).stream().noneMatch(skill -> skill.id().equals(skillId))) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>()).put(slot, skillId); player.sendSystemMessage(Component.literal("§aBound §f" + skillId + " §ato slot §f" + slot + "§a.")); return 1; }
     private int unbind(ServerPlayer player, int slot) { Map<Integer, String> playerBindings = bindings.get(player.getUUID()); if (playerBindings != null) playerBindings.remove(slot); player.sendSystemMessage(Component.literal("§7Cleared skill slot §f" + slot + "§7.")); return 1; }
-    private int cast(ServerPlayer player, String skillId) { SkillDefinition skill = ContentCatalog.routeSkills(config.defaultClass()).stream().filter(candidate -> candidate.id().equals(skillId)).findFirst().orElse(null); if (skill == null) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID())); return effects.cast(player, skill) ? 1 : 0; }
+    private int cast(ServerPlayer player, String skillId) { SkillDefinition skill = ContentCatalog.routeSkills(classFor(player)).stream().filter(candidate -> candidate.id().equals(skillId)).findFirst().orElse(null); if (skill == null) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID())); return effects.cast(player, skill, adminPolicy.playerLevel(player), adminPolicy.skillLevel(player)) ? 1 : 0; }
     private int setManaHud(ServerPlayer player, boolean enabled) { settings.put(player.getUUID(), new PlayerSettings(enabled)); player.sendSystemMessage(Component.literal(enabled ? "§aMana indicator enabled." : "§7Mana indicator disabled.")); return 1; }
     private void sendLegacyHud(ServerPlayer player) {
         String skills = bedrockSkillStrip(player);
@@ -298,10 +301,12 @@ public final class ForgeSoloFabric implements ModInitializer {
         }
         return out.append(" §8/skills").toString();
     }
+    private ClassId classFor(ServerPlayer player) { return adminPolicy.classFor(player, config.defaultClass()); }
     private void installDefaultBindings(ServerPlayer player) {
         Map<Integer, String> playerBindings = bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>());
-        var skills = ContentCatalog.routeSkills(config.defaultClass());
-        for (int slot = 1; slot <= Math.min(6, skills.size()); slot++) playerBindings.putIfAbsent(slot, skills.get(slot - 1).id());
+        var skills = ContentCatalog.routeSkills(classFor(player));
+        int start = adminPolicy.isGranted(player) ? Math.max(0, skills.size() - 3) : 0;
+        for (int slot = 1; slot <= Math.min(3, skills.size()); slot++) playerBindings.putIfAbsent(slot, skills.get(start + slot - 1).id());
     }
     private String hudSnapshot(ServerPlayer player) {
         ManaState state = skillRuntime.mana(player.getUUID());
@@ -315,7 +320,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         }
         QualityProfile profile = quality.getOrDefault(player.getUUID(), QualityProfile.MEDIUM);
         return String.format(java.util.Locale.ROOT, "1|%.2f|%.2f|%.2f|100.0|%s|%s|%s|%s",
-                mana, maxMana, thirst.value(player.getUUID()), config.defaultClass().name(),
+                mana, maxMana, thirst.value(player.getUUID()), classFor(player).name(),
                 profile.name().toLowerCase(java.util.Locale.ROOT), binds, combirolls.hudStatus(player));
     }
     private String healthText(ServerPlayer player) { return String.format("%.0f/%.0f", player.getHealth(), player.getMaxHealth()); }

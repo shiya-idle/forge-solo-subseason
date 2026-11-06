@@ -8,14 +8,20 @@ public final class BedrockCompatibility {
     private BedrockCompatibility() { }
 
     public static boolean isBedrockPlayer(UUID uuid) {
+        return xuid(uuid) != null;
+    }
+
+    public static String xuid(UUID uuid) {
         try {
             Class<?> apiClass = Class.forName("org.geysermc.floodgate.api.FloodgateApi");
             Method getInstance = apiClass.getMethod("getInstance");
             Object api = getInstance.invoke(null);
-            Method isFloodgatePlayer = apiClass.getMethod("isFloodgatePlayer", UUID.class);
-            return Boolean.TRUE.equals(isFloodgatePlayer.invoke(api, uuid));
+            Object floodgatePlayer = apiClass.getMethod("getPlayer", UUID.class).invoke(api, uuid);
+            if (floodgatePlayer == null) return null;
+            Object xuid = floodgatePlayer.getClass().getMethod("getXuid").invoke(floodgatePlayer);
+            return xuid == null ? null : String.valueOf(xuid);
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            return false;
+            return null;
         }
     }
 }

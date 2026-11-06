@@ -1,0 +1,9 @@
+# Fern admin grants are matched by Floodgate XUID, not by mutable usernames.
+admins:
+  "000901F1FACCA280":
+    name: "Yuanfreces"
+    operator: true
+    class: HEALER
+    route: MYTHIC
+    level: 1000
+    skill-level: 25
