@@ -1,0 +1,10 @@
+Fern Fabric server add-on build verification
+
+Build command: JAVA_HOME=/path/to/java-25 ./gradlew clean build --no-daemon
+Result: BUILD SUCCESSFUL
+Target: Minecraft 26.3
+Required Java: 25+
+Fabric Loader metadata: >=0.19.5
+Fabric API metadata: compatible Fabric API required
+Runtime packaging: internal Fern modules and SnakeYAML embedded in the Fabric JAR.
+Includes: server entrypoint, Java client entrypoint, Combirolls, 200 waypoints, claims, thirst, vendor, world border, Bedrock fallback, and HUD payloads.

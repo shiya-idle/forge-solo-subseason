@@ -1,0 +1,15 @@
+# Fern Fabric 26.3 baseline. Review every value before production.
+motd=Fern Subseason
+online-mode=true
+enforce-whitelist=true
+white-list=true
+enable-rcon=false
+enable-command-block=false
+difficulty=normal
+spawn-protection=0
+view-distance=8
+simulation-distance=6
+# Set these after hosting the Java resource pack over HTTPS.
+resource-pack=https://YOUR-HOST.example/forge-solo-visuals-26.3.zip
+resource-pack-sha1=1aae096cb8982d33566efcde1595484c2bd7bae3
+require-resource-pack=true

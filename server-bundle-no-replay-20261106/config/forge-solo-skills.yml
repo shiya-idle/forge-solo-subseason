@@ -1,0 +1,521 @@
+version: 1
+# The real server should also set resource-pack and require-resource-pack in server.properties.
+resource-pack:
+  required: true
+  ui-mode: two-row-skill-panel
+  panel-slots: 18
+
+client-companion:
+  required-for-java: true
+  protocol-version: 1
+  build: "fern-client-1"
+  verification-timeout-seconds: 15
+  hud-snapshot-interval-ticks: 10
+
+bedrock-fallback:
+  enabled: true
+  provider: floodgate
+  java-companion-required: false
+  actionbar-hud: true
+
+world-border:
+  enabled: true
+  center-x: 0
+  center-z: 0
+  diameter-blocks: 1000000
+  generate-on-demand-inside-border: true
+  pregenerate-entire-border: false
+
+visuals:
+  enabled: true
+  particle-density: 1.0
+  max-particles-per-cast: 160
+  layered-particles: true
+  rings-enabled: true
+  ring-points: 20
+  ring-radius: 1.6
+  combat-highlights: true
+  cast-trail: true
+  impact-wave: true
+  damage-flash: true
+  sound-volume: 0.8
+  show-cast-actionbar: true
+  show-cooldown-lore: true
+  profiles:
+    nature:
+      primary: HAPPY_VILLAGER
+      secondary: CLOUD
+      accent: TOTEM_OF_UNDYING
+      shape: spiral-ring
+    arcane:
+      primary: ENCHANT
+      secondary: END_ROD
+      accent: ELECTRIC_SPARK
+      shape: expanding-ring
+    radiant:
+      primary: HEART
+      secondary: HAPPY_VILLAGER
+      accent: END_ROD
+      shape: halo
+    shadow:
+      primary: SOUL
+      secondary: SCULK_SOUL
+      accent: WITCH
+      shape: vortex
+    impact:
+      primary: CRIT
+      secondary: ELECTRIC_SPARK
+      accent: CLOUD
+      shape: shockwave
+
+pvp:
+  potency-scale: 0.6
+  prevent-one-shot: true
+  prevent-invulnerability: true
+
+mana:
+  max-base: 100.0
+  regen-per-second: 2.0
+  actionbar-enabled-by-default: true
+  death-percent: 0.5
+
+health-bar:
+  enabled: true
+  vanilla-hearts-baseline: true
+  position: above-hotbar
+  show-numeric-health: true
+  show-level: true
+  replace-vanilla-hearts: true
+  resource-pack-overlay: "forge_solo:textures/gui/health_bar_overlay.png"
+  thirst-overlay: "forge_solo:textures/gui/thirst_bar_overlay.png"
+
+thirst:
+  enabled: true
+  maximum: 100.0
+  drain-per-second: 0.75
+  health-drain-when-empty-percent-per-second: 2.0
+  restore-per-water-bottle: 35.0
+  accepted-items: [GLASS_BOTTLE, POTION]
+
+quality:
+  default: medium
+  player-selectable: true
+  presets:
+    power-saving:
+      particle-density: 0.35
+      max-particles-per-cast: 32
+      layered-particles: false
+      cast-trails: false
+      overlays: false
+    medium:
+      particle-density: 0.65
+      max-particles-per-cast: 64
+      layered-particles: true
+      cast-trails: true
+      overlays: true
+    high:
+      particle-density: 1.0
+      max-particles-per-cast: 128
+      layered-particles: true
+      cast-trails: true
+      overlays: true
+    ultra:
+      particle-density: 1.35
+      max-particles-per-cast: 192
+      layered-particles: true
+      cast-trails: true
+      overlays: true
+
+difficulty:
+  default: normal
+  extreme-nightmare:
+    enabled: false
+    compared-to-hard-multiplier: 5.0
+    hostile-strength-amplifier: 4
+    hostile-speed-amplifier: 1
+
+vendor:
+  enabled: true
+  currency: EMERALD
+  npc-id: forge_progression_vendor
+  interaction-command: "/forge shop list"
+  water-bottle-item: GLASS_BOTTLE
+  level-scaled-anti-bottleneck: true
+
+combirolls:
+  enabled: true
+  ownership-file: "config/forge-combirolls.properties"
+  receipt-item: PAPER
+  craft-command: "/forge combiroll craft <material-a> <material-b>"
+  cast-command: "/forge combiroll cast <material-a> <material-b>"
+  material-order: [COPPER, IRON, GOLD, AMETHYST, DIAMOND, NETHERITE]
+  cooldown-seconds: 45
+  level-scaling: true
+  combinations:
+    copper+iron: {name: "Conductive Bulwark", rarity: COMMON, effect: BULWARK, damage: 2.0}
+    copper+gold: {name: "Fortune Current", rarity: UNCOMMON, effect: FORTUNE, damage: 2.5}
+    copper+amethyst: {name: "Resonant Coil", rarity: RARE, effect: RESONANCE, damage: 3.0}
+    copper+diamond: {name: "Prismatic Circuit", rarity: EPIC, effect: PRISM, damage: 4.0}
+    copper+netherite: {name: "Stormforged Core", rarity: MYTHIC, effect: STORM, damage: 5.0}
+    iron+gold: {name: "Gilded Bastion", rarity: UNCOMMON, effect: BASTION, damage: 3.0}
+    iron+amethyst: {name: "Crystal Guard", rarity: RARE, effect: CRYSTAL_GUARD, damage: 3.5}
+    iron+diamond: {name: "Diamond Bulwark", rarity: EPIC, effect: DIAMOND_GUARD, damage: 4.5}
+    iron+netherite: {name: "Infernal Bastion", rarity: MYTHIC, effect: INFERNAL, damage: 6.0}
+    gold+amethyst: {name: "Fortune Resonance", rarity: RARE, effect: FORTUNE_RESONANCE, damage: 4.0}
+    gold+diamond: {name: "Solar Prism", rarity: EPIC, effect: SOLAR_PRISM, damage: 5.0}
+    gold+netherite: {name: "Crown of Embers", rarity: MYTHIC, effect: EMBER_CROWN, damage: 7.0}
+    amethyst+diamond: {name: "Arcane Prism", rarity: EPIC, effect: ARCANE_PRISM, damage: 6.0}
+    amethyst+netherite: {name: "Void Resonator", rarity: MYTHIC, effect: VOID_RESONATOR, damage: 8.0}
+    diamond+netherite: {name: "Astral Breaker", rarity: LEGENDARY, effect: ASTRAL_BREAKER, damage: 10.0}
+
+ui:
+  panel-title: "Forge Skills"
+  rows: 2
+  default-button-slots: 18
+  right-side-layout: true
+  allow-player-bindings: true
+  server-only-settings: true
+
+skills:
+  effects:
+    max-blocks-per-cast: 20
+    max-target-radius: 12
+    max-duration-ticks: 1200
+    tree-fell-requires-claim-provider: true
+    area-mine-requires-claim-provider: true
+  initial-batch:
+    - heartwood-fall
+    - verdant-stride
+    - oresight
+    - runic-blast
+    - whetstone-blessing
+    - hunters-brand
+    - snaring-bolt
+    - wildroot-poultice
+    - pulse-of-life
+    - cleansing-nova
+  visual-profiles:
+    heartwood-fall: nature
+    verdant-stride: nature
+    oresight: arcane
+    runic-blast: arcane
+    whetstone-blessing: impact
+    hunters-brand: shadow
+    snaring-bolt: impact
+    wildroot-poultice: radiant
+    pulse-of-life: radiant
+    cleansing-nova: radiant
+
+default-class: HEALER
+
+# Dedicated worlds are server-side destinations. They must be created/imported by the
+# server before use; the mod does not silently create or reset world data.
+sub-worlds:
+  class-change:
+    enabled: true
+    world: "forge_class_arena"
+    environment: NORMAL
+    difficulty: PEACEFUL
+    allow-teleport-in: true
+    allow-teleport-out: true
+    keep-inventory: true
+    allow-building: false
+    allow-block-breaking: false
+    allow-claim-creation: false
+    allow-skill-damage: false
+    allow-pvp: false
+    void-protection: true
+    exit-location:
+      world: "minecraft:overworld"
+      x: 0.5
+      y: 80.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    bounds:
+      min-x: -32
+      min-y: 50
+      min-z: -32
+      max-x: 32
+      max-y: 120
+      max-z: 32
+
+  pvp-arena:
+    enabled: true
+    world: "forge_pvp_arena"
+    environment: NORMAL
+    difficulty: NORMAL
+    allow-teleport-in: true
+    allow-teleport-out: true
+    keep-inventory: true
+    allow-building: false
+    allow-block-breaking: false
+    allow-claim-creation: false
+    allow-pvp: true
+    allow-skill-damage: true
+    friendly-fire: true
+    void-protection: true
+    respawn-in-arena: true
+    drop-inventory-on-death: false
+    restore-health-on-entry: true
+    restore-mana-on-entry: true
+    entry-cooldown-seconds: 10
+    exit-location:
+      world: "minecraft:overworld"
+      x: 0.5
+      y: 80.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    bounds:
+      min-x: -128
+      min-y: 40
+      min-z: -128
+      max-x: 128
+      max-y: 160
+      max-z: 128
+
+  combiroll-forging:
+    enabled: true
+    world: "forge_combiroll_arena"
+    environment: NORMAL
+    difficulty: PEACEFUL
+    allow-teleport-in: true
+    allow-teleport-out: true
+    keep-inventory: true
+    allow-building: true
+    allow-block-breaking: true
+    allow-claim-creation: false
+    allow-skill-damage: false
+    allow-pvp: false
+    void-protection: true
+    bounds:
+      min-x: -64
+      min-y: 50
+      min-z: -64
+      max-x: 64
+      max-y: 140
+      max-z: 64
+
+waypoints:
+  enabled: true
+  public: true
+  max-public: 200
+  teleport-fee: 0
+  require-permission: false
+  destinations:
+    pvp: {label: "PvP Arena", world: "forge_pvp_arena", count: 70}
+    class: {label: "Class Change", world: "forge_class_arena", count: 65}
+    forge: {label: "Combiroll Forging", world: "forge_combiroll_arena", count: 65}
+
+class-change-arena:
+  enabled: true
+  world: "forge_class_arena"
+  require-player-inside-bounds: true
+  require-no-combat-tag: true
+  combat-lockout-seconds: 10
+  class-change-cooldown-seconds: 300
+  return-player-after-selection: true
+  preserve-health: false
+  reset-mana-on-change: true
+  clear-cooldowns-on-change: true
+  available-classes:
+    - NOVICE
+    - HEALER
+    - MARKSMAN
+    - LUMBER
+    - MINER
+    - CRAFTSMAN
+  selector:
+    mode: custom-panel
+    title: "Choose your class"
+    close-after-selection: true
+    confirmation-required: true
+    confirmation-phrase: "CONFIRM CLASS"
+
+custom-panel:
+  enabled: true
+  mode: server-authoritative-resource-pack
+  title: "Forge Skills"
+  subtitle: "Mana and abilities"
+  right-side-layout: true
+  rows: 2
+  columns: 9
+  only-show-bound-skills: true
+  hide-empty-slots: true
+  show-skill-icons: true
+  show-skill-names: true
+  show-mana-bar: true
+  mana-bar-position: above-hotbar
+  show-cooldown-indicator: true
+  cooldown-display: radial-and-seconds
+  show-level: true
+  show-class: true
+  show-arena-state: true
+  button-slots:
+    row-1: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    row-2: [10, 11, 12, 13, 14, 15, 16, 17, 18]
+  default-bindings:
+    NOVICE:
+      1: verdant-stride
+      2: whetstone-blessing
+    HEALER:
+      1: pulse-of-life
+      2: cleansing-nova
+      3: wildroot-poultice
+      4: verdant-stride
+    MARKSMAN:
+      1: hunters-brand
+      2: snaring-bolt
+      3: oresight
+    LUMBER:
+      1: heartwood-fall
+      2: runic-blast
+      3: whetstone-blessing
+    MINER:
+      1: oresight
+      2: runic-blast
+      3: heartwood-fall
+    CRAFTSMAN:
+      1: whetstone-blessing
+      2: wildroot-poultice
+      3: pulse-of-life
+
+pvp-arena:
+  enabled: true
+  world: "forge_pvp_arena"
+  require-player-inside-bounds: true
+  skill-damage-enabled: true
+  allow-claim-effects: false
+  allow-building-effects: false
+  allow-teleport-skills: false
+  allow-instant-kill: false
+  minimum-hit-delay-ticks: 10
+  damage-scaling: 0.6
+  friendly-fire: true
+  combat-tag-seconds: 15
+  combat-logout-protection: true
+  visual-effects:
+    enabled: true
+    particle-density: 0.75
+    max-particles-per-cast: 96
+    max-trail-points: 12
+    max-simultaneous-casts-per-player: 1
+    rings-enabled: true
+    ring-points: 16
+    ring-radius: 1.35
+    cast-trails-enabled: true
+    impact-waves-enabled: true
+    damage-flash-enabled: true
+    damage-flash-duration-ticks: 4
+    suppress-ambient-particles: false
+  cast-identifier:
+    enabled: true
+    show-short-id: true
+    show-skill-name: true
+    show-range: true
+    show-target-class: true
+    show-direction-trail: true
+    max-target-range: 12
+    font: "forge_solo:forge"
+  custom-ui:
+    resource-pack-overlay: "forge_solo:textures/gui/cast_trail_overlay.png"
+    damage-flash-overlay: "forge_solo:textures/gui/damage_flash_overlay.png"
+    skill-panel-texture: "forge_solo:textures/gui/skill_panel.png"
+    cast-sound-event: "forge_solo:cast.arcane"
+    impact-sound-event: "forge_solo:impact"
+    notice-sound-event: "forge_solo:notice"
+    show-cooldown-ring: true
+    show-mana-bar: true
+  class-loadouts:
+    NOVICE:
+      display-name: "Novice"
+      panel-color: "#A8A8A8"
+      max-mana: 100.0
+      damage-scale: 0.85
+      defense-scale: 1.0
+      mobility-scale: 1.0
+      skills:
+        1: verdant-stride
+        2: whetstone-blessing
+      cooldown-indicator: radial-and-seconds
+    HEALER:
+      display-name: "Healer"
+      panel-color: "#66D18F"
+      max-mana: 120.0
+      damage-scale: 0.75
+      defense-scale: 1.0
+      mobility-scale: 1.0
+      skills:
+        1: pulse-of-life
+        2: cleansing-nova
+        3: wildroot-poultice
+        4: verdant-stride
+      cooldown-indicator: radial-and-seconds
+    MARKSMAN:
+      display-name: "Marksman"
+      panel-color: "#E4B85C"
+      max-mana: 100.0
+      damage-scale: 1.0
+      defense-scale: 0.85
+      mobility-scale: 1.1
+      skills:
+        1: hunters-brand
+        2: snaring-bolt
+        3: oresight
+      cooldown-indicator: radial-and-seconds
+    LUMBER:
+      display-name: "Lumber"
+      panel-color: "#9A6A43"
+      max-mana: 105.0
+      damage-scale: 0.95
+      defense-scale: 1.15
+      mobility-scale: 0.9
+      skills:
+        1: heartwood-fall
+        2: runic-blast
+        3: whetstone-blessing
+      cooldown-indicator: radial-and-seconds
+    MINER:
+      display-name: "Miner"
+      panel-color: "#6E8CA6"
+      max-mana: 110.0
+      damage-scale: 1.0
+      defense-scale: 1.1
+      mobility-scale: 0.9
+      skills:
+        1: oresight
+        2: runic-blast
+        3: heartwood-fall
+      cooldown-indicator: radial-and-seconds
+    CRAFTSMAN:
+      display-name: "Craftsman"
+      panel-color: "#C57A52"
+      max-mana: 115.0
+      damage-scale: 0.9
+      defense-scale: 1.05
+      mobility-scale: 1.0
+      skills:
+        1: whetstone-blessing
+        2: wildroot-poultice
+        3: pulse-of-life
+      cooldown-indicator: radial-and-seconds
+  arena-panel:
+    title: "PvP Arena"
+    show-kills: true
+    show-deaths: true
+    show-streak: true
+    show-combat-timer: true
+    show-top-skill: true
+    show-mana-bar: true
+
+claims:
+  provider: immutable-claims
+  storage-file: "config/forge-claims.yml"
+  storage-fail-closed: true
+  fail-closed-until-configured: true
+  normal-player-claims-irreversible: true
+  require-three-factor-confirmation: true
+  confirmation-phrase: "CLAIM FOREVER"
+  purge-effects-on-registered-mod-buildings: true
+  protected-building-codes-file: "config/forge-buildings.yml"
