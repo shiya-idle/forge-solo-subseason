@@ -17,6 +17,7 @@ public final class PlayerClassService {
     public static final long TICKS_REQUIRED = 72_000L; // 3 x 24,000-tick Minecraft days
     private final Map<UUID, Long> onlineTicks = new ConcurrentHashMap<>();
     private final Map<UUID, ClassId> classes = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> arenaArrivals = new ConcurrentHashMap<>();
     private final Path path = Path.of("config", "forge-player-classes.properties");
 
     public PlayerClassService() { load(); }
@@ -37,6 +38,8 @@ public final class PlayerClassService {
     public long onlineTicks(UUID player) { return onlineTicks.getOrDefault(player, 0L); }
     public boolean eligible(UUID player) { return onlineTicks(player) >= TICKS_REQUIRED; }
     public long remainingTicks(UUID player) { return Math.max(0L, TICKS_REQUIRED - onlineTicks(player)); }
+    public boolean needsArenaArrival(UUID player) { return eligible(player) && !arenaArrivals.getOrDefault(player, false); }
+    public void markArenaArrival(UUID player) { arenaArrivals.put(player, true); save(); }
 
     public boolean choose(ServerPlayer player, ClassId classId) {
         UUID id = player.getUUID();
@@ -56,6 +59,7 @@ public final class PlayerClassService {
                 try {
                     if (parts[1].equals("ticks")) onlineTicks.put(id, Math.max(0L, Long.parseLong(p.getProperty(key))));
                     if (parts[1].equals("class")) classes.put(id, ClassId.valueOf(p.getProperty(key).toUpperCase()));
+                    if (parts[1].equals("arena")) arenaArrivals.put(id, Boolean.parseBoolean(p.getProperty(key)));
                 } catch (RuntimeException ignored) { }
             }
         } catch (IOException error) { ForgeSoloFabric.LOGGER.warn("Could not load player class state", error); }
@@ -67,6 +71,7 @@ public final class PlayerClassService {
             Properties p = new Properties();
             onlineTicks.forEach((id, ticks) -> p.setProperty(id + ".ticks", Long.toString(ticks)));
             classes.forEach((id, clazz) -> p.setProperty(id + ".class", clazz.name()));
+            arenaArrivals.forEach((id, arrived) -> p.setProperty(id + ".arena", Boolean.toString(arrived)));
             try (var out = Files.newOutputStream(path)) { p.store(out, "Fern player class unlocks; three connected Minecraft days"); }
         } catch (IOException error) { ForgeSoloFabric.LOGGER.warn("Could not save player class state", error); }
     }
