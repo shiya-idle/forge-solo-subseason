@@ -220,7 +220,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             UUID id = player.getUUID();
             playerClasses.tick(player, 10L);
-            if (classFor(player) == ClassId.NOVICE && playerClasses.needsArenaArrival(id)) {
+            if (!adminPolicy.isGranted(player) && playerClasses.needsArenaArrival(id)) {
                 if (waypoints.teleport(player, "class-001")) {
                     playerClasses.markArenaArrival(id);
                     player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));

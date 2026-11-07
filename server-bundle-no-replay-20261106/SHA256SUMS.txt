@@ -28,9 +28,10 @@ eaf32b6e4baa84e422e2227196818f1252342d3edb52be1973ad250dfb28b942  ./docs/NO-REPL
 925d5b9093e35eba217b281a7782352d2c86f543d1d45ff54b839ed2122d849b  ./docs/SERVER-MOD-AUDIT-20261029.md
 aaa7202be8c48df1310a78c3916e2bf4cc2261bed07d94b8bc57faad74ee2271  ./docs/WAYPOINTS-200.md
 afcb725ea713cd6e20dea7efd80889a3ac7d335b0541f31156013c7dbc0ed4ee  ./docs/WORLD-BORDER-1M.md
+177aee6e969ba1497afb8859f1e6ec74bd10b78b3b9d3c928112c8f6485a195f  ./docs/YUANFRECES-COMMAND-FIX.md
 48e16f85ad57aab837921db0ae2262c7becc092818666819cb7965184e793008  ./docs/YUANFRECES-XUID-ADMIN.md
 de880738a8e8976d0a3e26c97765ac50b8c46a6c8a2aae9cfe713d2a9b794285  ./fabric-server-launch.jar
 18442e2ad466d6ef41c37dbb4cb68495e6ca6658b1f1ee9be76143d155ef2c88  ./mods/fabric-api-0.165.0+26.3.jar
-757a838345d58e4eed3adc1ba1f9f963aed2f7b7b683d8b5b469971384976f9a  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
+62c1e0ce79c83e0df6de6efc9ef0de3edfe7b174d1993b76e35e41d4f4f604e1  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
 528b647a3d598fa3b25d6b50e7a5c9152dff1ed979b7af5fdd2c55e2724cda24  ./resource-packs/forge-solo-bedrock-26.3.mcpack
 bdaaa0143d7c192397f3f7e2c0f2ed4c97f0e6d55f600c224bbb4dee1ef89bc5  ./resource-packs/forge-solo-visuals-26.3.zip

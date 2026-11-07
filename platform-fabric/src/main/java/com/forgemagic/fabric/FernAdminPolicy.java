@@ -8,6 +8,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.math.BigInteger;
 import java.util.Map;
 
 /** Server-side grants keyed by Floodgate XUID, never by a mutable username. */
@@ -34,8 +35,22 @@ public final class FernAdminPolicy {
 
     private Map<?, ?> grant(ServerPlayer player) {
         String xuid = BedrockCompatibility.xuid(player.getUUID());
-        Object value = xuid == null ? null : grants.get(xuid);
-        return value instanceof Map<?, ?> map ? map : Map.of();
+        if (xuid == null) return Map.of();
+        for (Map.Entry<String, Object> entry : grants.entrySet()) {
+            if (xuidMatches(entry.getKey(), xuid) && entry.getValue() instanceof Map<?, ?> map) return map;
+        }
+        return Map.of();
+    }
+
+    /** Floodgate may expose an XUID as decimal while the deployment file commonly uses hexadecimal. */
+    private static boolean xuidMatches(String configured, String runtime) {
+        if (configured == null || runtime == null) return false;
+        if (configured.equalsIgnoreCase(runtime)) return true;
+        try {
+            BigInteger configuredValue = new BigInteger(configured.replaceFirst("^0[xX]", ""), 16);
+            BigInteger runtimeValue = runtime.matches("[0-9]+") ? new BigInteger(runtime, 10) : new BigInteger(runtime, 16);
+            return configuredValue.equals(runtimeValue);
+        } catch (RuntimeException ignored) { return false; }
     }
 
     public boolean isGranted(ServerPlayer player) { return !grant(player).isEmpty(); }
