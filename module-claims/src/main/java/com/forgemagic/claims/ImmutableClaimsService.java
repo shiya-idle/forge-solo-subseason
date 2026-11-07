@@ -51,7 +51,10 @@ public final class ImmutableClaimsService implements ClaimsService {
     public boolean canModify(UUID playerId, ClaimBlock block) {
         LandClaim claim = claimAt(block.world(), block.x(), block.y(), block.z());
         if (playerId != null && claim != null) return claim.owner().equals(playerId);
-        return false;
+        // Unclaimed land remains normal Minecraft land. Only an existing claim
+        // is protected; fail-closed behavior belongs to claim creation/storage,
+        // not to every ordinary block in the world.
+        return claim == null;
     }
 
     public boolean shouldPurgeEffect(ClaimBlock block, String effectId) {
