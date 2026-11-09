@@ -38,7 +38,7 @@ public final class FernWaypointService {
     }
 
     public boolean teleport(ServerPlayer player, String requested) {
-        String id = requested.toLowerCase(Locale.ROOT);
+        String id = alias(requested);
         Waypoint waypoint = waypoints.get(id);
         if (waypoint == null) {
             player.sendSystemMessage(Component.literal("§cUnknown waypoint. Try §f/waypoints§c."));
@@ -51,9 +51,22 @@ public final class FernWaypointService {
             player.sendSystemMessage(Component.literal("§cThe destination world §f" + waypoint.worldId() + "§c is not loaded. Create or import it before using this waypoint."));
             return false;
         }
-        player.teleportTo(target, waypoint.x() + 0.5, waypoint.y(), waypoint.z() + 0.5, java.util.Set.of(), player.getYRot(), player.getXRot(), false);
+        boolean moved = player.teleportTo(target, waypoint.x() + 0.5, waypoint.y(), waypoint.z() + 0.5,
+                java.util.Set.of(), player.getYRot(), player.getXRot(), false);
+        if (!moved) {
+            player.sendSystemMessage(Component.literal("§cTeleport was rejected by the server for §f" + waypoint.id() + "§c."));
+            return false;
+        }
         player.sendSystemMessage(Component.literal("§aTeleported to §f" + waypoint.label() + " §7(" + waypoint.id() + ")§a."));
         return true;
+    }
+
+    private String alias(String requested) {
+        String value = requested == null ? "" : requested.toLowerCase(Locale.ROOT);
+        if (value.equals("class")) return "class-001";
+        if (value.equals("pvp")) return "pvp-001";
+        if (value.equals("forge") || value.equals("combiroll")) return "forge-001";
+        return value;
     }
 
     public boolean isWorldLoaded(MinecraftServer server, String worldId) {

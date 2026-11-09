@@ -153,7 +153,16 @@ public final class ForgeSoloFabric implements ModInitializer {
             dispatcher.register(Commands.literal("waypoints")
                     .executes(ctx -> { waypoints.list(ctx.getSource().getPlayerOrException(), ""); return 1; })
                     .then(Commands.argument("category", StringArgumentType.word())
-                            .executes(ctx -> { waypoints.list(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "category")); return 1; })));
+                            .executes(ctx -> {
+                                ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                String value = StringArgumentType.getString(ctx, "category");
+                                if (value.equalsIgnoreCase("class") || value.equalsIgnoreCase("pvp") || value.equalsIgnoreCase("forge")
+                                        || value.matches("(?i)(class|pvp|forge)-\\d{3}")) {
+                                    return waypoints.teleport(player, value) ? 1 : 0;
+                                }
+                                waypoints.list(player, value);
+                                return 1;
+                            })));
             dispatcher.register(Commands.literal("waypoint")
                     .then(Commands.argument("name", StringArgumentType.word())
                             .executes(ctx -> waypoints.teleport(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")) ? 1 : 0)));
