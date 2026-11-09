@@ -56,6 +56,10 @@ public final class FernWaypointService {
         return true;
     }
 
+    public boolean isWorldLoaded(MinecraftServer server, String worldId) {
+        return server != null && findLevel(server, worldId) != null;
+    }
+
     private ServerLevel findLevel(MinecraftServer server, String worldId) {
         for (ServerLevel level : server.getAllLevels()) {
             String location = level.dimension().identifier().toString();

@@ -60,6 +60,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private final ThirstService thirst = new ThirstService();
     private FernAdminPolicy adminPolicy;
     private final PlayerClassService playerClasses = new PlayerClassService();
+    private final Map<UUID, Long> classArenaMissingNoticeAt = new ConcurrentHashMap<>();
     private final Map<UUID, QualityProfile> quality = new ConcurrentHashMap<>();
     private final Map<UUID, PendingCompanion> pendingCompanions = new ConcurrentHashMap<>();
     private final Map<UUID, String> readyCompanions = new ConcurrentHashMap<>();
@@ -220,10 +221,20 @@ public final class ForgeSoloFabric implements ModInitializer {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             UUID id = player.getUUID();
             playerClasses.tick(player, 10L);
-            if (!adminPolicy.isGranted(player) && playerClasses.needsArenaArrival(id)) {
-                if (waypoints.teleport(player, "class-001")) {
-                    playerClasses.markArenaArrival(id);
-                    player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));
+            if (!adminPolicy.isGranted(player) && classFor(player) == ClassId.NOVICE && playerClasses.needsArenaArrival(id)) {
+                if (waypoints.isWorldLoaded(server, "forge_class_arena")) {
+                    classArenaMissingNoticeAt.remove(id);
+                    if (waypoints.teleport(player, "class-001")) {
+                        playerClasses.markArenaArrival(id);
+                        player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));
+                    }
+                } else {
+                    long now = System.currentTimeMillis();
+                    long last = classArenaMissingNoticeAt.getOrDefault(id, 0L);
+                    if (now - last >= 30_000L) {
+                        classArenaMissingNoticeAt.put(id, now);
+                        player.sendSystemMessage(Component.literal("§cThe Class Change Arena is not installed yet. An administrator must add the Fern arena datapack and restart the server."));
+                    }
                 }
             }
             if (server.getTickCount() % 20 == 0) ClassWeaponService.grantIfMissing(player, classFor(player));
