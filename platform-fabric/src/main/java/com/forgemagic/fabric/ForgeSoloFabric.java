@@ -19,6 +19,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -123,6 +125,10 @@ public final class ForgeSoloFabric implements ModInitializer {
             if (serverPlayer.isShiftKeyDown() && ClassWeaponService.isClassWeapon(clazz, serverPlayer.getMainHandItem())) {
                 return showPanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
             }
+            if (serverPlayer.isShiftKeyDown() && serverPlayer.getMainHandItem().isEmpty()
+                    && isClassArena(serverPlayer)) {
+                return showPanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+            }
             if (!serverPlayer.isShiftKeyDown() && clazz == ClassId.CRAFTSMAN
                     && serverPlayer.getMainHandItem().is(Items.CRAFTING_TABLE)) {
                 return showCraftingPanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
@@ -133,6 +139,7 @@ public final class ForgeSoloFabric implements ModInitializer {
             dispatcher.register(Commands.literal("skills")
                     .executes(ctx -> showPanel(ctx.getSource().getPlayerOrException()))
                     .then(Commands.literal("panel").executes(ctx -> showPanel(ctx.getSource().getPlayerOrException())))
+                    .then(Commands.literal("close").executes(ctx -> { ctx.getSource().getPlayerOrException().sendSystemMessage(Component.literal("§7Forge panel closed.")); return 1; }))
                     .then(Commands.literal("cast").then(Commands.argument("skill", StringArgumentType.word())
                             .executes(ctx -> cast(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "skill")))))
                     .then(Commands.literal("mana").then(Commands.argument("enabled", BoolArgumentType.bool())
@@ -237,6 +244,7 @@ public final class ForgeSoloFabric implements ModInitializer {
                     if (waypoints.teleport(player, "class-001")) {
                         playerClasses.markArenaArrival(id);
                         player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));
+                        showPanel(player);
                     }
                 } else {
                     long now = System.currentTimeMillis();
@@ -325,12 +333,29 @@ public final class ForgeSoloFabric implements ModInitializer {
     }
     private int showPanel(ServerPlayer player) {
         ClassId clazz = classFor(player);
-        if (clazz == ClassId.NOVICE) { player.sendSystemMessage(Component.literal("§eChoose a class after three connected Minecraft days with §f/class choose <class>§e.")); return 0; }
+        if (clazz == ClassId.NOVICE) {
+            player.sendSystemMessage(Component.literal("§d§lCLASS CHANGE PANEL §8— §fClick a class to choose it when unlocked."));
+            for (ClassId option : new ClassId[]{ClassId.HEALER, ClassId.MINER, ClassId.MARKSMAN, ClassId.LUMBER, ClassId.CRAFTSMAN}) {
+                player.sendSystemMessage(clickable("§a[ " + option.name() + " ]", "/class choose " + option.name(), "Choose " + option.name()));
+            }
+            player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close panel"));
+            return 1;
+        }
         var skills = ContentCatalog.routeSkills(clazz);
-        player.sendSystemMessage(Component.literal("§2Forge Skills Panel §8| §fClass " + clazz.name() + " §fMana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID())));
-        player.sendSystemMessage(Component.literal("§7Cast with §f/skills cast <skill-id>§7."));
-        for (int i = 0; i < skills.size(); i++) { SkillDefinition skill = skills.get(i); player.sendSystemMessage(Component.literal("§a[" + (i + 1) + "] §f" + skill.displayName() + " §8(" + skill.id() + ")")); }
+        player.sendSystemMessage(Component.literal("§2§lFORGE SKILLS PANEL §8| §f" + clazz.name() + " §7Mana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID())));
+        player.sendSystemMessage(Component.literal("§7Click a skill button to cast it. The server checks mana and cooldowns."));
+        for (int i = 0; i < skills.size(); i++) {
+            SkillDefinition skill = skills.get(i);
+            player.sendSystemMessage(clickable("§a[ " + (i + 1) + " ] §f" + skill.displayName(), "/skills cast " + skill.id(), skill.description()));
+        }
+        player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close panel; crouch and right-click empty air in the class arena to reopen it."));
         return 1;
+    }
+    private MutableComponent clickable(String label, String command, String hover) {
+        return Component.literal(label).withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand(command)).withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal(hover))));
+    }
+    private boolean isClassArena(ServerPlayer player) {
+        return player.level().dimension().identifier().getPath().equals("forge_class_arena");
     }
     private int showCraftingPanel(ServerPlayer player) { player.sendSystemMessage(Component.literal("§6Crafting Panel §8| §fUse a crafting table recipe or §e/forge shop§f for Fern vendor items.")); player.sendSystemMessage(Component.literal("§7The crafting-table weapon opens this panel only when used on air without crouching.")); return 1; }
     private int showClassStatus(ServerPlayer player) { ClassId clazz = classFor(player); if (clazz != ClassId.NOVICE) { player.sendSystemMessage(Component.literal("§aYour class is §f" + clazz.name() + "§a.")); return 1; } long remain = playerClasses.remainingTicks(player.getUUID()); player.sendSystemMessage(Component.literal("§eClass selection unlocks after three connected Minecraft days. Remaining: §f" + remain + " ticks§e.")); return 1; }
