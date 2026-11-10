@@ -27,6 +27,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
@@ -38,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -66,6 +68,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private final Map<UUID, QualityProfile> quality = new ConcurrentHashMap<>();
     private final Map<UUID, PendingCompanion> pendingCompanions = new ConcurrentHashMap<>();
     private final Map<UUID, String> readyCompanions = new ConcurrentHashMap<>();
+    private final Map<UUID, ReturnPoint> lastMainWorldPlaces = new ConcurrentHashMap<>();
     private ExtremeNightmareService difficulty;
     private long serverStartedAtMillis;
 
@@ -140,7 +143,11 @@ public final class ForgeSoloFabric implements ModInitializer {
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("fern")
-                    .executes(ctx -> showPlayerMenu(ctx.getSource().getPlayerOrException())));
+                    .executes(ctx -> showPlayerMenu(ctx.getSource().getPlayerOrException()))
+                    .then(Commands.literal("return")
+                            .executes(ctx -> showReturnPanel(ctx.getSource().getPlayerOrException()))
+                            .then(Commands.literal("last").executes(ctx -> returnToLast(ctx.getSource().getPlayerOrException())))
+                            .then(Commands.literal("spawn").executes(ctx -> returnToWorldSpawn(ctx.getSource().getPlayerOrException())))));
             dispatcher.register(Commands.literal("skills")
                     .executes(ctx -> showPanel(ctx.getSource().getPlayerOrException()))
                     .then(Commands.literal("panel").executes(ctx -> showPanel(ctx.getSource().getPlayerOrException())))
@@ -171,14 +178,14 @@ public final class ForgeSoloFabric implements ModInitializer {
                                 String value = StringArgumentType.getString(ctx, "category");
                                 if (value.equalsIgnoreCase("class") || value.equalsIgnoreCase("pvp") || value.equalsIgnoreCase("forge")
                                         || value.matches("(?i)(class|pvp|forge)-\\d{3}")) {
-                                    return waypoints.teleport(player, value) ? 1 : 0;
+                                    return teleportWaypoint(player, value) ? 1 : 0;
                                 }
                                 waypoints.list(player, value);
                                 return 1;
                             })));
             dispatcher.register(Commands.literal("waypoint")
                     .then(Commands.argument("name", StringArgumentType.word())
-                            .executes(ctx -> waypoints.teleport(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")) ? 1 : 0)));
+                            .executes(ctx -> teleportWaypoint(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "name")) ? 1 : 0)));
             dispatcher.register(Commands.literal("claims")
                     .then(Commands.literal("request")
                             .then(Commands.argument("minX", IntegerArgumentType.integer(-29999984, 29999984))
@@ -247,7 +254,7 @@ public final class ForgeSoloFabric implements ModInitializer {
             if (!adminPolicy.isGranted(player) && classFor(player) == ClassId.NOVICE && playerClasses.needsArenaArrival(id)) {
                 if (waypoints.isWorldLoaded(server, "forge_class_arena")) {
                     classArenaMissingNoticeAt.remove(id);
-                    if (waypoints.teleport(player, "class-001")) {
+                    if (teleportWaypoint(player, "class-001")) {
                         playerClasses.markArenaArrival(id);
                         player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));
                         showClassChangePanel(player);
@@ -380,8 +387,57 @@ public final class ForgeSoloFabric implements ModInitializer {
         player.sendSystemMessage(clickable("§c[ PVP ARENA ]", "/waypoint pvp", "Travel to the PvP Arena"));
         player.sendSystemMessage(clickable("§d[ COMBIROLLS ]", "/forge combiroll menu", "Craft or cast Combirolls"));
         player.sendSystemMessage(clickable("§6[ VENDOR ]", "/forge shop list", "Open the Forge Vendor stock"));
+        if (!isMainWorld(player)) player.sendSystemMessage(clickable("§e[ RETURN TO MAIN WORLD ]", "/fern return", "Choose Last Seen Place or World Spawn"));
         player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close the Fern menu"));
         return 1;
+    }
+    private int showReturnPanel(ServerPlayer player) {
+        if (isMainWorld(player)) {
+            player.sendSystemMessage(Component.literal("§7You are already in the main world."));
+            return 0;
+        }
+        player.sendSystemMessage(Component.literal("§e§lRETURN TO MAIN WORLD §8— §fChoose a destination"));
+        ReturnPoint point = lastMainWorldPlaces.get(player.getUUID());
+        if (point != null) {
+            player.sendSystemMessage(clickable("§a[ LAST SEEN PLACE ]", "/fern return last", "Return to your saved main-world location"));
+        } else {
+            player.sendSystemMessage(Component.literal("§8[ LAST SEEN PLACE ] §7No main-world location saved yet."));
+        }
+        player.sendSystemMessage(clickable("§b[ WORLD SPAWN ]", "/fern return spawn", "Return to the main-world spawn"));
+        player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close return menu"));
+        return 1;
+    }
+    private int returnToLast(ServerPlayer player) {
+        ReturnPoint point = lastMainWorldPlaces.get(player.getUUID());
+        if (point == null) { player.sendSystemMessage(Component.literal("§cNo main-world Last Seen Place is saved.")); return 0; }
+        MinecraftServer server = player.level().getServer();
+        if (server == null || !isMainWorld(player)) {
+            ServerLevel overworld = server == null ? null : server.overworld();
+            if (overworld == null) return 0;
+            player.teleportTo(overworld, point.x(), point.y(), point.z(), Set.of(), point.yaw(), point.pitch(), false);
+            player.sendSystemMessage(Component.literal("§aReturned to your Last Seen Place in the main world."));
+            return 1;
+        }
+        return 0;
+    }
+    private int returnToWorldSpawn(ServerPlayer player) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null) return 0;
+        ServerLevel overworld = server.overworld();
+        var respawn = overworld.getRespawnData();
+        var spawn = respawn.pos();
+        player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, Set.of(), respawn.yaw(), respawn.pitch(), false);
+        player.sendSystemMessage(Component.literal("§aReturned to the main-world spawn."));
+        return 1;
+    }
+    private boolean teleportWaypoint(ServerPlayer player, String requested) {
+        if (isMainWorld(player)) {
+            lastMainWorldPlaces.put(player.getUUID(), new ReturnPoint(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot()));
+        }
+        return waypoints.teleport(player, requested);
+    }
+    private boolean isMainWorld(ServerPlayer player) {
+        return player.level().dimension().identifier().toString().equals("minecraft:overworld");
     }
     private int showClassStatus(ServerPlayer player) { ClassId clazz = classFor(player); if (clazz != ClassId.NOVICE) { player.sendSystemMessage(Component.literal("§aYour class is §f" + clazz.name() + "§a.")); return 1; } long remain = playerClasses.remainingTicks(player.getUUID()); player.sendSystemMessage(Component.literal("§eClass selection unlocks after three connected Minecraft days. Remaining: §f" + remain + " ticks§e.")); return 1; }
     private int chooseClass(ServerPlayer player, String value) { ClassId chosen; try { chosen = ClassId.valueOf(value.toUpperCase(java.util.Locale.ROOT)); } catch (IllegalArgumentException error) { player.sendSystemMessage(Component.literal("§cUnknown class. Choose HEALER, MINER, MARKSMAN, LUMBER, or CRAFTSMAN.")); return 0; } if (!playerClasses.choose(player, chosen)) { player.sendSystemMessage(Component.literal("§cYou cannot choose that class yet, or you already have a permanent class.")); return 0; } ClassWeaponService.grantIfMissing(player, chosen); player.sendSystemMessage(Component.literal("§aClass selected: §f" + chosen.name() + "§a.")); return 1; }
@@ -417,4 +473,5 @@ public final class ForgeSoloFabric implements ModInitializer {
     private record PlayerSettings(boolean manaHud) { static PlayerSettings defaults() { return new PlayerSettings(true); } }
     private record PendingCompanion(String nonce, long expiresAtMillis) { }
     private record PendingClaim(ImmutableClaimsService.Cuboid area, String code, long expiresAtMillis) { }
+    private record ReturnPoint(double x, double y, double z, float yaw, float pitch) { }
 }
