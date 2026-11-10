@@ -127,7 +127,7 @@ public final class ForgeSoloFabric implements ModInitializer {
             }
             if (serverPlayer.isShiftKeyDown() && serverPlayer.getMainHandItem().isEmpty()
                     && isClassArena(serverPlayer)) {
-                return showPanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+                return showClassChangePanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
             }
             if (!serverPlayer.isShiftKeyDown() && clazz == ClassId.CRAFTSMAN
                     && serverPlayer.getMainHandItem().is(Items.CRAFTING_TABLE)) {
@@ -244,7 +244,7 @@ public final class ForgeSoloFabric implements ModInitializer {
                     if (waypoints.teleport(player, "class-001")) {
                         playerClasses.markArenaArrival(id);
                         player.sendSystemMessage(Component.literal("§dYou have arrived at the Class Change Arena. Choose your permanent class with §f/class choose <class>§d."));
-                        showPanel(player);
+                        showClassChangePanel(player);
                     }
                 } else {
                     long now = System.currentTimeMillis();
@@ -334,12 +334,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private int showPanel(ServerPlayer player) {
         ClassId clazz = classFor(player);
         if (clazz == ClassId.NOVICE) {
-            player.sendSystemMessage(Component.literal("§d§lCLASS CHANGE PANEL §8— §fClick a class to choose it when unlocked."));
-            for (ClassId option : new ClassId[]{ClassId.HEALER, ClassId.MINER, ClassId.MARKSMAN, ClassId.LUMBER, ClassId.CRAFTSMAN}) {
-                player.sendSystemMessage(clickable("§a[ " + option.name() + " ]", "/class choose " + option.name(), "Choose " + option.name()));
-            }
-            player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close panel"));
-            return 1;
+            return showClassChangePanel(player);
         }
         var skills = ContentCatalog.routeSkills(clazz);
         player.sendSystemMessage(Component.literal("§2§lFORGE SKILLS PANEL §8| §f" + clazz.name() + " §7Mana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID())));
@@ -349,6 +344,20 @@ public final class ForgeSoloFabric implements ModInitializer {
             player.sendSystemMessage(clickable("§a[ " + (i + 1) + " ] §f" + skill.displayName(), "/skills cast " + skill.id(), skill.description()));
         }
         player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close panel; crouch and right-click empty air in the class arena to reopen it."));
+        return 1;
+    }
+    private int showClassChangePanel(ServerPlayer player) {
+        ClassId current = classFor(player);
+        player.sendSystemMessage(Component.literal("§d§lCLASS CHANGE PANEL §8— §fClass Change Arena only"));
+        if (current != ClassId.NOVICE) {
+            player.sendSystemMessage(Component.literal("§aYour permanent class is §f" + current.name() + "§a. Class changes are locked after selection."));
+        } else {
+            player.sendSystemMessage(Component.literal("§7Click a class button when your three-day unlock is ready."));
+            for (ClassId option : new ClassId[]{ClassId.HEALER, ClassId.MINER, ClassId.MARKSMAN, ClassId.LUMBER, ClassId.CRAFTSMAN}) {
+                player.sendSystemMessage(clickable("§a[ " + option.name() + " ]", "/class choose " + option.name(), "Choose " + option.name()));
+            }
+        }
+        player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close class-change popup; crouch and right-click empty air here to reopen it."));
         return 1;
     }
     private MutableComponent clickable(String label, String command, String hover) {
