@@ -3,6 +3,7 @@ package com.forgemagic.fabric;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -68,6 +69,19 @@ public final class CombirollService {
         definitions.forEach((key, definition) -> player.sendSystemMessage(Component.literal(
                 (playerOwned.contains(key) ? "§a✓ " : "§8• ") + "§e" + key + " §7— §f" + definition.name()
                         + " §8[" + definition.rarity().name().toLowerCase(Locale.ROOT) + "]")));
+    }
+
+    public void menu(ServerPlayer player) {
+        Set<String> playerOwned = owned.getOrDefault(player.getUUID(), Set.of());
+        player.sendSystemMessage(Component.literal("§6§lCOMBIROLL MENU §8— §fClick to craft or cast"));
+        definitions.forEach((key, definition) -> {
+            boolean has = playerOwned.contains(key);
+            String action = has ? "cast" : "craft";
+            String label = has ? "§a[ CAST ] " : "§e[ CRAFT ] ";
+            player.sendSystemMessage(Component.literal(label + definition.name() + " §8(" + key + ")")
+                    .withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/forge combiroll " + action + " " + key.replace('+', ' ')))));
+        });
+        player.sendSystemMessage(Component.literal("§7Crafting consumes one of each material. The server validates ownership and inventory."));
     }
 
     public void spawn(ServerPlayer player) {

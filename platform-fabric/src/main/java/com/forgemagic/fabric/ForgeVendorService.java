@@ -1,6 +1,7 @@
 package com.forgemagic.fabric;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -66,7 +67,8 @@ public final class ForgeVendorService {
         offers.forEach((id, offer) -> {
             Stock s = stock.get(id);
             long wait = Math.max(0, (s.nextRestockMillis() - now) / 1000);
-            player.sendSystemMessage(Component.literal("§e" + id + " §7— §f" + offer.name() + " §8[" + offer.price() + " emeralds] §bstock " + s.available() + "/" + s.maxStock() + " §7" + offer.rarity().name().toLowerCase(Locale.ROOT) + (wait > 0 ? " · restock " + wait + "s" : "")));
+            player.sendSystemMessage(Component.literal("§e[ BUY x1 ] §f" + offer.name() + " §8[" + offer.price() + " emeralds] §bstock " + s.available() + "/" + s.maxStock() + " §7" + offer.rarity().name().toLowerCase(Locale.ROOT) + (wait > 0 ? " · restock " + wait + "s" : ""))
+                    .withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/forge shop buy " + id + " 1"))));
         });
     }
 

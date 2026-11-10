@@ -133,9 +133,14 @@ public final class ForgeSoloFabric implements ModInitializer {
                     && serverPlayer.getMainHandItem().is(Items.CRAFTING_TABLE)) {
                 return showCraftingPanel(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
             }
+            if (!serverPlayer.isShiftKeyDown() && serverPlayer.getMainHandItem().isEmpty()) {
+                return showPlayerMenu(serverPlayer) > 0 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+            }
             return InteractionResult.PASS;
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            dispatcher.register(Commands.literal("fern")
+                    .executes(ctx -> showPlayerMenu(ctx.getSource().getPlayerOrException())));
             dispatcher.register(Commands.literal("skills")
                     .executes(ctx -> showPanel(ctx.getSource().getPlayerOrException()))
                     .then(Commands.literal("panel").executes(ctx -> showPanel(ctx.getSource().getPlayerOrException())))
@@ -207,6 +212,7 @@ public final class ForgeSoloFabric implements ModInitializer {
                                     .requires(source -> source.isPlayer() && source.getServer().getPlayerList().isOp(((ServerPlayer) source.getEntity()).nameAndId()))
                                     .executes(ctx -> { combirolls.spawn(ctx.getSource().getPlayerOrException()); return 1; }))
                             .then(Commands.literal("list").executes(ctx -> { combirolls.list(ctx.getSource().getPlayerOrException()); return 1; }))
+                            .then(Commands.literal("menu").executes(ctx -> { combirolls.menu(ctx.getSource().getPlayerOrException()); return 1; }))
                             .then(Commands.literal("craft")
                                     .then(Commands.argument("materialA", StringArgumentType.word())
                                     .then(Commands.argument("materialB", StringArgumentType.word())
@@ -367,6 +373,16 @@ public final class ForgeSoloFabric implements ModInitializer {
         return player.level().dimension().identifier().getPath().equals("forge_class_arena");
     }
     private int showCraftingPanel(ServerPlayer player) { player.sendSystemMessage(Component.literal("§6Crafting Panel §8| §fUse a crafting table recipe or §e/forge shop§f for Fern vendor items.")); player.sendSystemMessage(Component.literal("§7The crafting-table weapon opens this panel only when used on air without crouching.")); return 1; }
+    private int showPlayerMenu(ServerPlayer player) {
+        player.sendSystemMessage(Component.literal("§2§lFERN MENU §8— §fClick an option"));
+        player.sendSystemMessage(clickable("§a[ SKILLS ]", "/skills panel", "Open your clickable skill panel"));
+        player.sendSystemMessage(clickable("§b[ CLASS CHANGE ]", "/waypoint class", "Travel to the Class Change Arena"));
+        player.sendSystemMessage(clickable("§c[ PVP ARENA ]", "/waypoint pvp", "Travel to the PvP Arena"));
+        player.sendSystemMessage(clickable("§d[ COMBIROLLS ]", "/forge combiroll menu", "Craft or cast Combirolls"));
+        player.sendSystemMessage(clickable("§6[ VENDOR ]", "/forge shop list", "Open the Forge Vendor stock"));
+        player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close the Fern menu"));
+        return 1;
+    }
     private int showClassStatus(ServerPlayer player) { ClassId clazz = classFor(player); if (clazz != ClassId.NOVICE) { player.sendSystemMessage(Component.literal("§aYour class is §f" + clazz.name() + "§a.")); return 1; } long remain = playerClasses.remainingTicks(player.getUUID()); player.sendSystemMessage(Component.literal("§eClass selection unlocks after three connected Minecraft days. Remaining: §f" + remain + " ticks§e.")); return 1; }
     private int chooseClass(ServerPlayer player, String value) { ClassId chosen; try { chosen = ClassId.valueOf(value.toUpperCase(java.util.Locale.ROOT)); } catch (IllegalArgumentException error) { player.sendSystemMessage(Component.literal("§cUnknown class. Choose HEALER, MINER, MARKSMAN, LUMBER, or CRAFTSMAN.")); return 0; } if (!playerClasses.choose(player, chosen)) { player.sendSystemMessage(Component.literal("§cYou cannot choose that class yet, or you already have a permanent class.")); return 0; } ClassWeaponService.grantIfMissing(player, chosen); player.sendSystemMessage(Component.literal("§aClass selected: §f" + chosen.name() + "§a.")); return 1; }
     private int bind(ServerPlayer player, int slot, String skillId) { if (ContentCatalog.routeSkills(classFor(player)).stream().noneMatch(skill -> skill.id().equals(skillId))) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>()).put(slot, skillId); player.sendSystemMessage(Component.literal("§aBound §f" + skillId + " §ato slot §f" + slot + "§a.")); return 1; }
