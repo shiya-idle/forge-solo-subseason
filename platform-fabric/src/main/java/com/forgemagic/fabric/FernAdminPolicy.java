@@ -16,6 +16,7 @@ public final class FernAdminPolicy {
     private final Map<String, Object> grants;
 
     private FernAdminPolicy(Map<String, Object> grants) { this.grants = grants; }
+    public static FernAdminPolicy empty() { return new FernAdminPolicy(Map.of()); }
 
     public static FernAdminPolicy load() {
         Path path = Path.of("config", "forge-admins.yml");
@@ -54,6 +55,7 @@ public final class FernAdminPolicy {
     }
 
     public boolean isGranted(ServerPlayer player) { return !grant(player).isEmpty(); }
+    public boolean isWorldEditAllowed(ServerPlayer player) { return bool(grant(player), "worldedit", false); }
     public boolean isOperator(ServerPlayer player) { return bool(grant(player), "operator", false); }
     public ClassId classFor(ServerPlayer player, ClassId fallback) {
         try { return ClassId.valueOf(string(grant(player), "class", fallback.name()).toUpperCase()); }

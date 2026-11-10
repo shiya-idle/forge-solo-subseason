@@ -73,6 +73,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         ForgeSoloSounds.register();
         config = FabricSkillConfig.load();
         adminPolicy = FernAdminPolicy.load();
+        FernWorldEditGuard.configure(adminPolicy);
         serverStartedAtMillis = loadServerStartedAtMillis();
         difficulty = new ExtremeNightmareService(nightmareUnlocked());
         claims = new ImmutableClaimsService(config.purgeEffectsOnModBuildings());

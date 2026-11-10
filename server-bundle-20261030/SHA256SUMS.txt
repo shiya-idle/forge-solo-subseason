@@ -1,7 +1,7 @@
 14048124169566cd88db17bfae5052d745fad344ba555fda9a7ecbd92f13eabb  ./BUILD-VERIFIED.txt
 98901e9700f896399309ce95fc6a10a18dc6f5b53e6e3f26210196e6a713c6dc  ./README-SERVER-BUNDLE.md
 c79fca5fbaa5cf48c492e6230310d43144af42aa2d412436317bff0af62f1d76  ./REQUIRED-VERSIONS.txt
-8d51fb7b41848862eaf0b4a6581791c1eccf0aa5b6def29d3fe5b1cca6b30b01  ./config/forge-admins.yml
+5770ed75d543289a9fa94e77bb3ef9d2d9da9a0e547c28ea400617e40d907c2a  ./config/forge-admins.yml
 ba9f91f42daaa509f6aabc975ff02fe3e2bc6cca653ab863c00c02a06c6a1b89  ./config/forge-buildings.yml
 d1beb928e9231d346e20ab6142f75335783e9d774c8802b73ce22283a36351ef  ./config/forge-solo-skills.yml
 7a6013830c1115aa4c088474a8fff31e068c2f9e5a2cf5c65cac8bd6be9644b9  ./config/forge-solo-visuals-server.properties
@@ -28,10 +28,11 @@ cd6bc1c02353a37be2bd273e6448d2c3b2fe5bd3a4db90600385b472726eb3fa  ./docs/COMBIRO
 8f773a231ebcf7200eb70917a764871b410015b8f336cab65214ec227b3f77a7  ./docs/WAYPOINT-TELEPORT-FIX.md
 aaa7202be8c48df1310a78c3916e2bf4cc2261bed07d94b8bc57faad74ee2271  ./docs/WAYPOINTS-200.md
 afcb725ea713cd6e20dea7efd80889a3ac7d335b0541f31156013c7dbc0ed4ee  ./docs/WORLD-BORDER-1M.md
+f7b3a5448c16b2daa3eaf286843c2e92e3385f62d6e0abd7e8b75bfd7d3cb66c  ./docs/WORLDEDIT-YUANFRECES-ONLY.md
 177aee6e969ba1497afb8859f1e6ec74bd10b78b3b9d3c928112c8f6485a195f  ./docs/YUANFRECES-COMMAND-FIX.md
 48e16f85ad57aab837921db0ae2262c7becc092818666819cb7965184e793008  ./docs/YUANFRECES-XUID-ADMIN.md
 de880738a8e8976d0a3e26c97765ac50b8c46a6c8a2aae9cfe713d2a9b794285  ./fabric-server-launch.jar
 18442e2ad466d6ef41c37dbb4cb68495e6ca6658b1f1ee9be76143d155ef2c88  ./mods/fabric-api-0.165.0+26.3.jar
-a9e052ab58c707da606a1e24646e340a3af4f4c53774f54ea0fc6a5fbea21b7a  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
+7d1acdfe4cc5fb39111cc4fa6f3091796524a7b52604ffa2a0df6659962ccaa0  ./mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar
 9a6dd7edb9de35b74d60e7af18454fd5b542c0108f6251e8d21d1141731e6aa8  ./resource-packs/forge-solo-bedrock-26.3.mcpack
 bdaaa0143d7c192397f3f7e2c0f2ed4c97f0e6d55f600c224bbb4dee1ef89bc5  ./resource-packs/forge-solo-visuals-26.3.zip

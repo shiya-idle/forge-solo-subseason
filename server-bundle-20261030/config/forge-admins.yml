@@ -3,6 +3,7 @@ admins:
   "000901F1FACCA280":
     name: "Yuanfreces"
     operator: true
+    worldedit: true
     class: HEALER
     route: MYTHIC
     level: 1000
