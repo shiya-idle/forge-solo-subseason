@@ -153,8 +153,15 @@ public final class CombirollService {
         try (InputStream in = Files.newInputStream(path)) {
             Properties properties = new Properties(); properties.load(in);
             for (String name : properties.stringPropertyNames()) {
-                try { owned.put(UUID.fromString(name), ConcurrentHashMap.newKeySet()); owned.get(UUID.fromString(name)).addAll(Set.of(properties.getProperty(name, "").split(","))); }
-                catch (IllegalArgumentException ignored) { }
+                try {
+                    UUID uuid = UUID.fromString(name);
+                    Set<String> values = ConcurrentHashMap.newKeySet();
+                    for (String value : properties.getProperty(name, "").split(",")) {
+                        String key = value.trim().toLowerCase(Locale.ROOT);
+                        if (definitions.containsKey(key)) values.add(key);
+                    }
+                    if (!values.isEmpty()) owned.put(uuid, values);
+                } catch (IllegalArgumentException ignored) { }
             }
         } catch (Exception error) { ForgeSoloFabric.LOGGER.warn("Could not load Combiroll ownership", error); }
     }
@@ -202,10 +209,33 @@ public final class CombirollService {
 
     private void giveItem(ServerPlayer player, net.minecraft.world.item.Item item) { player.addItem(new ItemStack(item)); }
     private void definition(Material first, Material second, String name, Rarity rarity, Effect effect, double damage) { Definition definition = new Definition(key(first, second), first, second, name, rarity, effect, damage); definitions.put(definition.key(), definition); }
-    private Definition find(String first, String second) { try { return definitions.get(key(Material.valueOf(first.toUpperCase(Locale.ROOT)), Material.valueOf(second.toUpperCase(Locale.ROOT)))); } catch (IllegalArgumentException error) { return null; } }
+    private Definition find(String first, String second) {
+        try {
+            return definitions.get(key(Material.parse(first), Material.parse(second)));
+        } catch (IllegalArgumentException error) { return null; }
+    }
     private static String key(Material first, Material second) { return first.ordinal() < second.ordinal() ? first.name().toLowerCase(Locale.ROOT) + "+" + second.name().toLowerCase(Locale.ROOT) : second.name().toLowerCase(Locale.ROOT) + "+" + first.name().toLowerCase(Locale.ROOT); }
 
-    public enum Material { COPPER("copper"), IRON("iron"), GOLD("gold"), AMETHYST("amethyst"), DIAMOND("diamond"), NETHERITE("netherite"); private final String displayName; Material(String displayName) { this.displayName = displayName; } public String displayName() { return displayName; } }
+    public enum Material {
+        COPPER("copper"), IRON("iron"), GOLD("gold"), AMETHYST("amethyst"), DIAMOND("diamond"), NETHERITE("netherite");
+        private final String displayName;
+        Material(String displayName) { this.displayName = displayName; }
+        public String displayName() { return displayName; }
+        static Material parse(String input) {
+            String value = input == null ? "" : input.toLowerCase(Locale.ROOT).trim().replace('-', '_').replace(' ', '_');
+            if (value.startsWith("minecraft:")) value = value.substring("minecraft:".length());
+            value = switch (value) {
+                case "copper_ingot" -> "copper";
+                case "iron_ingot" -> "iron";
+                case "gold_ingot" -> "gold";
+                case "amethyst_shard" -> "amethyst";
+                case "diamond_item" -> "diamond";
+                case "netherite_ingot" -> "netherite";
+                default -> value;
+            };
+            return Material.valueOf(value.toUpperCase(Locale.ROOT));
+        }
+    }
     public enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC }
     private enum Effect { BULWARK, FORTUNE, RESONANCE, PRISM, STORM, BASTION, CRYSTAL_GUARD, DIAMOND_GUARD, INFERNAL, FORTUNE_RESONANCE, SOLAR_PRISM, EMBER_CROWN, ARCANE_PRISM, VOID_RESONATOR, ASTRAL_BREAKER }
     private record Definition(String key, Material first, Material second, String name, Rarity rarity, Effect effect, double damage) { }
