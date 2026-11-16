@@ -1,9 +1,14 @@
-# Implementation Tally — 2026-10-15
+# Implementation Tally — 2026-11-16
 
 ## Completed and tested
 
 | Area | Status |
 |---|---|
+| 26.3 Fabric gameplay slice | Complete and compiled: Cornucopia trade-dimension routing, owner-marked items, protected death drops, Craftsman recipes, daily quest villager, admin elite mobs, extra impact particles |
+| Cornucopia world asset | Flat bootstrap plus prebuilt NetherGames Hub converted for Java; CC BY 4.0 attribution and AWS import instructions are included with the release assets |
+| Escher Dimension | Migrated to 26.3 and Fern-compatible; zero unresolved active function targets; integrated Fabric startup and representative function smoke calls pass. Player-driven progression still needs staging QA |
+| Quest NPC appearance | Quest interaction works with a villager; the provided Bedrock 4D skin pack is not yet integrated into the Java NPC renderer |
+| Open-source arena worlds | Cornucopia Hub is CC BY 4.0; full-world PvP and Combiroll map licenses still need independent verification or original builds |
 | Build and Paper 26.2-130 packaging | Complete; Java 25 plugin build passes |
 | Durable wallet ledger | Complete for single-server file persistence; atomic replacement, rollback, idempotency |
 | Z.com PostgreSQL contract | Prepared: TLS-validated environment contract and wallet/transfer schema; live adapter is not yet wired |

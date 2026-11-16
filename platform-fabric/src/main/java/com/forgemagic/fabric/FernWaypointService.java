@@ -14,24 +14,26 @@ import java.util.Map;
 
 /** Public server-side access points for Fern's dedicated arenas. */
 public final class FernWaypointService {
-    public static final int MAX_PUBLIC_WAYPOINTS = 200;
+    public static final int MAX_PUBLIC_WAYPOINTS = 202;
     private final Map<String, Waypoint> waypoints = new LinkedHashMap<>();
 
     public FernWaypointService() {
         generate("pvp", "PvP Arena", "forge_pvp_arena", 70, -128, 128, 40, 160);
         generate("class", "Class Change", "forge_class_arena", 65, -32, 32, 50, 120);
         generate("forge", "Combiroll Forging", "forge_combiroll_arena", 65, -64, 64, 50, 140);
+        generate("cornucopia", "Cornucopia Landing and Trade", "forge_cornucopia", 1, 0, 0, 50, 120);
+        waypoints.put("dungeon-001", new Waypoint("dungeon-001", "Escher Dungeon Entrance", "tid:layer_1", 0, 55, 0));
     }
 
     public void list(ServerPlayer player, String filter) {
         String normalized = filter == null ? "" : filter.toLowerCase(Locale.ROOT);
-        player.sendSystemMessage(Component.literal("§dFern Waypoints §8— §f200 public access points"));
+        player.sendSystemMessage(Component.literal("§dFern Waypoints §8— §f202 public access points"));
         int shown = 0;
         for (Waypoint waypoint : waypoints.values()) {
             if (!normalized.isEmpty() && !waypoint.id().startsWith(normalized)) continue;
             player.sendSystemMessage(Component.literal("§e" + waypoint.id() + " §7— §f" + waypoint.label() + " §8(" + waypoint.worldId() + ")"));
             if (++shown >= 40) {
-                player.sendSystemMessage(Component.literal("§7Showing 40 results. Use §f/waypoints pvp§7, §f/waypoints class§7, or §f/waypoints forge§7 to narrow the list."));
+                player.sendSystemMessage(Component.literal("§7Showing 40 results. Filter with §f/waypoints pvp§7, §f/waypoints class§7, §f/waypoints forge§7, §f/waypoints cornucopia§7, or §f/waypoints dungeon§7."));
                 break;
             }
         }
@@ -66,6 +68,8 @@ public final class FernWaypointService {
         if (value.equals("class")) return "class-001";
         if (value.equals("pvp")) return "pvp-001";
         if (value.equals("forge") || value.equals("combiroll")) return "forge-001";
+        if (value.equals("cornucopia") || value.equals("spawnland")) return "cornucopia-001";
+        if (value.equals("dungeon") || value.equals("escher")) return "dungeon-001";
         return value;
     }
 
@@ -93,6 +97,7 @@ public final class FernWaypointService {
             int x = min + (int) Math.round((double) column * span / Math.max(1, columns - 1));
             int z = min + (int) Math.round((double) row * span / Math.max(1, (count + columns - 1) / columns - 1));
             int y = Math.min(maxY - 1, Math.max(minY + 1, minY + 30));
+            if ("pvp".equals(prefix) && index == 0) { x = 0; y = 65; z = 0; }
             String id = String.format(Locale.ROOT, "%s-%03d", prefix, index + 1);
             waypoints.put(id, new Waypoint(id, label + " Waypoint " + (index + 1), worldId, x, y, z));
         }

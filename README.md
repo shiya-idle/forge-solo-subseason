@@ -1,6 +1,6 @@
 # Fern Minecraft ecosystem
 
-Fern is a Minecraft 26.3 Fabric server project with a Java client companion, Bedrock/Geyser compatibility, server-authoritative skills, claims, thirst, vendors, Combirolls, public arena waypoints, custom HUD payloads, and the Fern website/control-plane components.
+Fern is a Minecraft 26.3 Fabric server project with a Java client companion, Bedrock/Geyser compatibility, server-authoritative skills, claims, thirst, vendors, Combirolls, Cornucopia trading, Escher dungeon support, public waypoints, custom HUD payloads, and the Fern website/control-plane components.
 
 This repository is the source of truth for the Minecraft side. The separate website repository is `https://github.com/shiya-idle/craft-control-panel`.
 
@@ -14,7 +14,7 @@ This repository is the source of truth for the Minecraft side. The separate webs
 - Recommended heap on an 8 GiB VM: `-Xms5G -Xmx6G`
 - Production platform: Fabric
 
-The latest server-ready files are in [`server-bundle-20261030`](server-bundle-20261030). It contains the Fabric launcher, exact Fabric API JAR, Fern mod JAR, configs, Java resource pack, Bedrock pack, Control Agent files, and deployment notes.
+The base server-ready files are in [`server-bundle-20261030`](server-bundle-20261030). It contains the Fabric launcher, exact Fabric API JAR, Fern mod JAR, configs, Java resource pack, Bedrock pack, Control Agent files, and deployment notes. The updated Minecraft 26.3 Fern mod and compatible Escher datapack are published in the [MC 26.3 Escher/Fern release](https://github.com/shiya-idle/forge-solo-subseason/releases/tag/mc26.3-escher-fern-20261116).
 
 ## Phone-only EC2 rebuild
 
@@ -84,17 +84,27 @@ Do not enable `require-resource-pack=true` until the HTTPS URL works. The Bedroc
 
 ## Worlds and gameplay
 
-Fern does not silently create or reset dedicated worlds. Create or import these before using their public waypoints:
+Fern does not silently replace or reset the existing overworld. Create or import these before using their public waypoints:
 
 ```text
 forge_pvp_arena
 forge_class_arena
 forge_combiroll_arena
+forge_cornucopia
+tid:layer_1 (Escher, supplied by its datapack)
 ```
 
-Players can use `/waypoints`, `/waypoints pvp`, `/waypoints class`, `/waypoints forge`, `/waypoint pvp-001`, `/waypoint class-001`, and `/waypoint forge-001`. There are 70 PvP, 65 class-change, and 65 Combiroll forging waypoints.
+Install the bootstrap in [`deploy-assets/20261112-cornucopia`](deploy-assets/20261112-cornucopia) to create the separate `fern:forge_cornucopia` dimension. It does not replace the existing overworld or existing `fern-arenas` datapack. A prebuilt NetherGames Hub world converted for Java is included with the [Cornucopia Hub release assets](https://github.com/shiya-idle/forge-solo-subseason/releases/tag/mc26.3-escher-fern-20261116); it is CC BY 4.0 and has an import guide in that package.
+
+Players can use `/waypoints`, `/waypoints pvp`, `/waypoints class`, `/waypoints forge`, `/waypoints cornucopia`, `/waypoints dungeon`, `/waypoint pvp-001`, `/waypoint class-001`, `/waypoint forge-001`, `/waypoint cornucopia`, or `/waypoint dungeon`. There are 202 total access points: 70 PvP, 65 class-change, 65 Combiroll forging, one Cornucopia entrance, and one Escher dungeon entrance. `/fern return last` returns players from Escher to their saved Overworld location.
+
+Player-held items receive owner metadata. Another player cannot pick up or use an owner-bound item outside Cornucopia, and container interactions with foreign-owned stacks are blocked; pickup in Cornucopia transfers the item to its new holder. Player death drops are owner-locked, have their lifetime reset, and report their coordinates. This is enforced by the Fabric mod, so install the rebuilt JAR before enabling the datapack.
 
 Combiroll commands include `/forge combiroll list`, `/forge combiroll craft <materialA> <materialB>`, and `/forge combiroll cast <materialA> <materialB>`.
+
+The Craftsman panel is `/craftsman` and offers server-validated `/craftsman craft mana_tonic` and `/craftsman craft ember_flare` recipes. The daily quest board is `/quests`; an operator can spawn its villager with `/fern questnpc spawn`. Admin elite mobs use `/fern mob spawn <vanilla-mob-id> [tier 1-5]`, `/fern mob despawn [radius]`, and `/fern mob despawn-all` (the last command scans within 128 blocks). The existing Floodgate-XUID profile for `.Yuanfreces` grants operator permission; the mutable username alone is not used for authorization.
+
+The quest NPC currently uses a villager model. The supplied Bedrock skin pack contains Bedrock-specific skin geometry and is not directly attachable to a Java villager; a custom cross-client NPC skin model remains to be implemented. The Cornucopia Hub is CC BY 4.0; full-world PvP and Combiroll maps still need independently verified open licenses or original builds before redistribution.
 
 ## Connecting Fern on ReadySpace/cPanel
 
@@ -119,7 +129,7 @@ export JAVA_HOME=/path/to/java-25
 ./gradlew clean build --no-daemon
 ```
 
-The Fabric artifact is `platform-fabric/build/libs/platform-fabric-0.1.0-SNAPSHOT.jar`. The final verified JAR is copied into the bundle as `mods/fern-forge-solo-subseason-0.1.0-mc26.3.jar`.
+The Fabric artifact is `platform-fabric/build/libs/platform-fabric-0.1.0-SNAPSHOT.jar`. The verified updated Fabric JAR and compatible Escher datapack are attached to the [MC 26.3 Escher/Fern release](https://github.com/shiya-idle/forge-solo-subseason/releases/tag/mc26.3-escher-fern-20261116).
 
 A server cannot automatically install a Java client mod. Distribute the client companion through the approved modpack/launcher workflow. Bedrock players use Geyser/Floodgate and the server-side fallback.
 

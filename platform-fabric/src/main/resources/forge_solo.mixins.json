@@ -1,9 +1,9 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.forgemagic.fabric",
+  "package": "com.forgemagic.fabric.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": ["client.ForgeSoloClientHud"],
-  "mixins": ["mixin.FernWorldEditCommandGuard"],
+  "mixins": ["FernWorldEditCommandGuard", "FernBoundItemEntityMixin", "FernContainerOwnerGuardMixin"],
   "injectors": { "defaultRequire": 1 }
 }

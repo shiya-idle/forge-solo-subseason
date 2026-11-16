@@ -301,13 +301,14 @@ sub-worlds:
 waypoints:
   enabled: true
   public: true
-  max-public: 200
+  max-public: 201
   teleport-fee: 0
   require-permission: false
   destinations:
     pvp: {label: "PvP Arena", world: "forge_pvp_arena", count: 70}
     class: {label: "Class Change", world: "forge_class_arena", count: 65}
     forge: {label: "Combiroll Forging", world: "forge_combiroll_arena", count: 65}
+    cornucopia: {label: "Cornucopia Landing and Trade", world: "forge_cornucopia", count: 1}
 
 class-change-arena:
   enabled: true

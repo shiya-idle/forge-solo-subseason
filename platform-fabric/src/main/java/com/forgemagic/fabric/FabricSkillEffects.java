@@ -59,8 +59,8 @@ public final class FabricSkillEffects {
             case HEAL -> heal(player, skill);
             case PURIFY -> purify(player);
             case GLOW, ORE_SENSE -> effect(player, MobEffects.GLOWING, duration, 0, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK);
-            case SLOW -> targetSlow(resolution);
-            case ROOT -> targetRoot(resolution);
+            case SLOW -> targetSlow(player, resolution);
+            case ROOT -> targetRoot(player, resolution);
             case KNOCKBACK -> targetKnockback(player, resolution);
             case PROJECTILE_DAMAGE -> targetDamage(player, skill, resolution);
             case ORE_PULL -> targetPull(player, resolution);
@@ -70,11 +70,11 @@ public final class FabricSkillEffects {
     }
 
     private boolean requiresTarget(SkillAction action) { return switch (action) { case SLOW, ROOT, KNOCKBACK, PROJECTILE_DAMAGE, ORE_PULL, TREE_FELL, AREA_MINE -> true; default -> false; }; }
-    private boolean targetSlow(PvpTargetingEngine.Resolution resolution) { boolean applied = false; for (var target : resolution.targets()) { target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 1)); applied = true; } return applied; }
-    private boolean targetRoot(PvpTargetingEngine.Resolution resolution) { boolean applied = false; for (var target : resolution.targets()) { target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 4)); applied = true; } return applied; }
-    private boolean targetKnockback(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { if (resolution.primary() == null) return false; Vec3 direction = resolution.primary().position().subtract(player.position()).normalize(); resolution.primary().push(direction.x * 0.8, 0.25, direction.z * 0.8); return true; }
+    private boolean targetSlow(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { boolean applied = false; for (var target : resolution.targets()) { target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 1)); visualizeAt(target.position().add(0, target.getBbHeight() * 0.6, 0), player, ParticleTypes.SNOWFLAKE, ParticleTypes.SCULK_SOUL, 12); applied = true; } return applied; }
+    private boolean targetRoot(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { boolean applied = false; for (var target : resolution.targets()) { target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 4)); visualizeAt(target.position().add(0, 0.15, 0), player, ParticleTypes.SOUL, ParticleTypes.CRIT, 18); applied = true; } return applied; }
+    private boolean targetKnockback(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { if (resolution.primary() == null) return false; Vec3 direction = resolution.primary().position().subtract(player.position()).normalize(); resolution.primary().push(direction.x * 0.8, 0.25, direction.z * 0.8); visualizeAt(resolution.primary().position().add(0, resolution.primary().getBbHeight() * 0.5, 0), player, ParticleTypes.SWEEP_ATTACK, ParticleTypes.ELECTRIC_SPARK, 18); return true; }
     private boolean targetDamage(ServerPlayer player, SkillDefinition skill, PvpTargetingEngine.Resolution resolution) { if (resolution.primary() == null) return false; float damage = (float) Math.max(0.5, Math.min(8.0, skill.baseEffect() * config.pvpScale())); float before = resolution.primary().getHealth(); resolution.primary().hurt(player.damageSources().playerAttack(player), damage); boolean hit = resolution.primary().getHealth() < before || !resolution.primary().isAlive(); if (hit) visualizeAt(resolution.predictedPoint(), player, ParticleTypes.CRIT, ParticleTypes.ELECTRIC_SPARK, 12); return hit; }
-    private boolean targetPull(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { if (resolution.primary() == null) return false; Vec3 direction = player.position().subtract(resolution.primary().position()).normalize(); resolution.primary().push(direction.x * 0.45, 0.1, direction.z * 0.45); return true; }
+    private boolean targetPull(ServerPlayer player, PvpTargetingEngine.Resolution resolution) { if (resolution.primary() == null) return false; Vec3 direction = player.position().subtract(resolution.primary().position()).normalize(); resolution.primary().push(direction.x * 0.45, 0.1, direction.z * 0.45); visualizeAt(resolution.primary().position().add(0, resolution.primary().getBbHeight() * 0.5, 0), player, ParticleTypes.PORTAL, ParticleTypes.END_ROD, 20); return true; }
 
     private boolean effect(ServerPlayer player, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> type, int duration, int amplifier, ParticleOptions primary, ParticleOptions secondary) { player.addEffect(new MobEffectInstance(type, duration, amplifier, false, true, true)); visualize(player, primary, secondary, 22, true); return true; }
     private boolean heal(ServerPlayer player, SkillDefinition skill) { float amount = (float) Math.max(1.0, Math.min(12.0, skill.baseEffect() * 2.0)); if (player.getHealth() >= player.getMaxHealth()) return false; player.heal(amount); visualize(player, ParticleTypes.HEART, ParticleTypes.HAPPY_VILLAGER, 18, true); return true; }

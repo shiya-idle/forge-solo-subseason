@@ -14,7 +14,9 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.Commands;
@@ -60,6 +62,9 @@ public final class ForgeSoloFabric implements ModInitializer {
     private final PlayerProgressionModifiers progression = new PlayerProgressionModifiers();
     private final ForgeVendorService vendor = new ForgeVendorService(progression);
     private final CombirollService combirolls = new CombirollService();
+    private final CraftsmanWorkbench craftsman = new CraftsmanWorkbench(skillRuntime);
+    private final FernEliteMobService eliteMobs = new FernEliteMobService();
+    private final FernQuestBoardService questBoard = new FernQuestBoardService();
     private final FernWaypointService waypoints = new FernWaypointService();
     private final ThirstService thirst = new ThirstService();
     private FernAdminPolicy adminPolicy;
@@ -90,6 +95,21 @@ public final class ForgeSoloFabric implements ModInitializer {
         new FabricClaimsGuard(claims).register();
         targeting = new PvpTargetingEngine(config);
         effects = new FabricSkillEffects(skillRuntime, config, claims, targeting);
+        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+            if (entity instanceof ServerPlayer player) FernItemBindingService.bindInventory(player);
+            return true;
+        });
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            if (entity instanceof ServerPlayer player) FernItemBindingService.protectDeathDrops(player);
+            else if (entity.getKillCredit() instanceof ServerPlayer killer) questBoard.onMobKill(killer, entity);
+        });
+        UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
+            if (player instanceof ServerPlayer serverPlayer && questBoard.isQuestNpc(entity)) {
+                questBoard.show(serverPlayer);
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        });
         ServerPlayNetworking.registerGlobalReceiver(ForgeSoloPayloads.COMPANION_HELLO_TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
             PendingCompanion pending = pendingCompanions.get(player.getUUID());
@@ -121,7 +141,13 @@ public final class ForgeSoloFabric implements ModInitializer {
             readyCompanions.remove(id);
         });
         UseItemCallback.EVENT.register((player, level, hand) -> {
-            if (!(player instanceof ServerPlayer serverPlayer) || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.PASS;
+            if (!FernItemBindingService.canUseOutsideTradeWorld(serverPlayer.getItemInHand(hand), serverPlayer)) {
+                serverPlayer.sendSystemMessage(Component.literal("§cThis item is bound to another player. Ownership can only change in Cornucopia."));
+                return InteractionResult.FAIL;
+            }
+            if (craftsman.use(serverPlayer, serverPlayer.getItemInHand(hand))) return InteractionResult.SUCCESS;
+            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
             if (thirst.drinkWaterBottle(serverPlayer)) return InteractionResult.SUCCESS;
             thirst.splashWaterPotion(serverPlayer);
             ClassId clazz = classFor(serverPlayer);
@@ -148,6 +174,31 @@ public final class ForgeSoloFabric implements ModInitializer {
                             .executes(ctx -> showReturnPanel(ctx.getSource().getPlayerOrException()))
                             .then(Commands.literal("last").executes(ctx -> returnToLast(ctx.getSource().getPlayerOrException())))
                             .then(Commands.literal("spawn").executes(ctx -> returnToWorldSpawn(ctx.getSource().getPlayerOrException())))));
+            var adminCommand = (java.util.function.Predicate<net.minecraft.commands.CommandSourceStack>) source -> source.isPlayer()
+                    && (source.getServer().getPlayerList().isOp(((ServerPlayer) source.getEntity()).nameAndId())
+                    || adminPolicy.isOperator((ServerPlayer) source.getEntity()));
+            var mobCommand = Commands.literal("mob").requires(adminCommand)
+                    .then(Commands.literal("spawn").then(Commands.argument("type", StringArgumentType.word())
+                            .executes(ctx -> eliteMobs.spawn(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "type"), 1) ? 1 : 0)
+                            .then(Commands.argument("tier", IntegerArgumentType.integer(1, 5))
+                                    .executes(ctx -> eliteMobs.spawn(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "type"), IntegerArgumentType.getInteger(ctx, "tier")) ? 1 : 0))))
+                    .then(Commands.literal("despawn").executes(ctx -> eliteMobs.despawnNear(ctx.getSource().getPlayerOrException(), 32) > 0 ? 1 : 0)
+                            .then(Commands.argument("radius", IntegerArgumentType.integer(1, 128))
+                                    .executes(ctx -> eliteMobs.despawnNear(ctx.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(ctx, "radius")) > 0 ? 1 : 0)))
+                    .then(Commands.literal("despawn-all").executes(ctx -> eliteMobs.despawnAll(ctx.getSource().getPlayerOrException()) > 0 ? 1 : 0));
+            var questNpcCommand = Commands.literal("questnpc").requires(adminCommand)
+                    .then(Commands.literal("spawn").executes(ctx -> { questBoard.spawnNpc(ctx.getSource().getPlayerOrException()); return 1; }));
+            dispatcher.register(Commands.literal("fern").then(mobCommand).then(questNpcCommand));
+            dispatcher.register(Commands.literal("craftsman")
+                    .executes(ctx -> { craftsman.show(ctx.getSource().getPlayerOrException(), classFor(ctx.getSource().getPlayerOrException())); return 1; })
+                    .then(Commands.literal("craft")
+                            .then(Commands.argument("recipe", StringArgumentType.word())
+                                    .executes(ctx -> craftsman.craft(ctx.getSource().getPlayerOrException(), classFor(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "recipe")) ? 1 : 0))));
+            dispatcher.register(Commands.literal("quests")
+                    .executes(ctx -> { questBoard.show(ctx.getSource().getPlayerOrException()); return 1; })
+                    .then(Commands.literal("claim")
+                            .then(Commands.argument("quest", StringArgumentType.word())
+                                    .executes(ctx -> questBoard.claim(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "quest")) ? 1 : 0))));
             dispatcher.register(Commands.literal("skills")
                     .executes(ctx -> showPanel(ctx.getSource().getPlayerOrException()))
                     .then(Commands.literal("panel").executes(ctx -> showPanel(ctx.getSource().getPlayerOrException())))
@@ -176,8 +227,9 @@ public final class ForgeSoloFabric implements ModInitializer {
                             .executes(ctx -> {
                                 ServerPlayer player = ctx.getSource().getPlayerOrException();
                                 String value = StringArgumentType.getString(ctx, "category");
-                                if (value.equalsIgnoreCase("class") || value.equalsIgnoreCase("pvp") || value.equalsIgnoreCase("forge")
-                                        || value.matches("(?i)(class|pvp|forge)-\\d{3}")) {
+                                if (value.equalsIgnoreCase("class") || value.equalsIgnoreCase("pvp") || value.equalsIgnoreCase("forge") || value.equalsIgnoreCase("cornucopia")
+                                        || value.equalsIgnoreCase("dungeon") || value.equalsIgnoreCase("escher")
+                                        || value.matches("(?i)(class|pvp|forge|cornucopia|dungeon)-\\d{3}")) {
                                     return teleportWaypoint(player, value) ? 1 : 0;
                                 }
                                 waypoints.list(player, value);
@@ -241,7 +293,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         });
         ServerTickEvents.END_SERVER_TICK.register(this::tick);
         ServerLifecycleEvents.SERVER_STARTED.register(this::applyWorldBorder);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> { if (claimStorage != null) claimStorage.save(claims); vendor.save(); combirolls.save(); });
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> { if (claimStorage != null) claimStorage.save(claims); vendor.save(); combirolls.save(); questBoard.save(); });
         LOGGER.info("Forge Solo Subseason Fabric {} initialized; loaded claims={}, claim storage ready={}", config.version(), Math.max(0, loadedClaims), claimStorageReady);
     }
 
@@ -269,6 +321,7 @@ public final class ForgeSoloFabric implements ModInitializer {
                 }
             }
             if (server.getTickCount() % 20 == 0) ClassWeaponService.grantIfMissing(player, classFor(player));
+            if (server.getTickCount() % 20 == 0) FernItemBindingService.bindInventory(player);
             skillRuntime.regenerate(id, config.manaRegenPerSecond() / 2.0);
             if (BedrockCompatibility.isBedrockPlayer(id)) {
                 if (settings.getOrDefault(id, PlayerSettings.defaults()).manaHud()) sendLegacyHud(player);
@@ -350,13 +403,19 @@ public final class ForgeSoloFabric implements ModInitializer {
             return showClassChangePanel(player);
         }
         var skills = ContentCatalog.routeSkills(clazz);
-        player.sendSystemMessage(Component.literal("§2§lFORGE SKILLS PANEL §8| §f" + clazz.name() + " §7Mana " + manaText(player) + " §3Thirst " + thirst.bar(player.getUUID())));
-        player.sendSystemMessage(Component.literal("§7Click a skill button to cast it. The server checks mana and cooldowns."));
+        player.sendSystemMessage(Component.literal("§2§l✦ FORGE / SKILL DECK")
+                .withStyle(style -> style.withFont(new FontDescription.Resource(Identifier.parse("forge_solo:forge")))));
+        player.sendSystemMessage(Component.literal("§8CLASS §f" + clazz.name() + "  §8•  §9MANA §f" + manaText(player)
+                + "  §8•  §3THIRST §f" + thirst.bar(player.getUUID())));
+        player.sendSystemMessage(Component.literal("§8────────────────────────────────────────"));
+        player.sendSystemMessage(Component.literal("§7Select an ability below. Mana and cooldowns are validated server-side."));
         for (int i = 0; i < skills.size(); i++) {
             SkillDefinition skill = skills.get(i);
-            player.sendSystemMessage(clickable("§a[ " + (i + 1) + " ] §f" + skill.displayName(), "/skills cast " + skill.id(), skill.description()));
+            player.sendSystemMessage(clickable("§8[ §b" + String.format(java.util.Locale.ROOT, "%02d", i + 1)
+                    + " §8] §f" + skill.displayName() + " §a▶ CAST", "/skills cast " + skill.id(), skill.description()));
         }
-        player.sendSystemMessage(clickable("§8[ CLOSE ]", "/skills close", "Close panel; crouch and right-click empty air in the class arena to reopen it."));
+        player.sendSystemMessage(Component.literal("§8────────────────────────────────────────"));
+        player.sendSystemMessage(clickable("§8[ CLOSE DECK ]", "/skills close", "Close the skill deck."));
         return 1;
     }
     private int showClassChangePanel(ServerPlayer player) {
@@ -379,10 +438,13 @@ public final class ForgeSoloFabric implements ModInitializer {
     private boolean isClassArena(ServerPlayer player) {
         return player.level().dimension().identifier().getPath().equals("forge_class_arena");
     }
-    private int showCraftingPanel(ServerPlayer player) { player.sendSystemMessage(Component.literal("§6Crafting Panel §8| §fUse a crafting table recipe or §e/forge shop§f for Fern vendor items.")); player.sendSystemMessage(Component.literal("§7The crafting-table weapon opens this panel only when used on air without crouching.")); return 1; }
+    private int showCraftingPanel(ServerPlayer player) { craftsman.show(player, classFor(player)); return 1; }
     private int showPlayerMenu(ServerPlayer player) {
         player.sendSystemMessage(Component.literal("§2§lFERN MENU §8— §fClick an option"));
         player.sendSystemMessage(clickable("§a[ SKILLS ]", "/skills panel", "Open your clickable skill panel"));
+        player.sendSystemMessage(clickable("§b[ CORNUCOPIA / TRADE ]", "/waypoint cornucopia", "Go to the shared landing and trade world"));
+        player.sendSystemMessage(clickable("§5[ ESCHER DUNGEON ]", "/waypoint dungeon", "Enter the Escher dungeon; use /fern return to return to the main world"));
+        player.sendSystemMessage(clickable("§3[ QUEST BOARD ]", "/quests", "View your daily quest progress"));
         player.sendSystemMessage(clickable("§b[ CLASS CHANGE ]", "/waypoint class", "Travel to the Class Change Arena"));
         player.sendSystemMessage(clickable("§c[ PVP ARENA ]", "/waypoint pvp", "Travel to the PvP Arena"));
         player.sendSystemMessage(clickable("§d[ COMBIROLLS ]", "/forge combiroll menu", "Craft or cast Combirolls"));
