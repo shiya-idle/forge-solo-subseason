@@ -8,8 +8,8 @@
   "license": "All-Rights-Reserved",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.forgemagic.fabric.ForgeSoloFabric"],
-    "client": ["com.forgemagic.fabric.client.ForgeSoloClient"]
+    "main": ["com.forgemagic.fabric.ForgeSoloFabric", "com.forgemagic.fabric.TomatEconomyEntrypoint"],
+    "client": ["com.forgemagic.fabric.client.ForgeSoloClient", "com.forgemagic.fabric.client.TomatTradeClient"]
   },
   "mixins": ["forge_solo.mixins.json"],
   "depends": {

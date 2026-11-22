@@ -13,6 +13,7 @@ import re
 import shutil
 import sys
 import zipfile
+from escher_runtime_fixes import apply_escher_runtime_fixes
 
 SOURCE = pathlib.Path(sys.argv[1]).resolve()
 DEST = pathlib.Path(sys.argv[2]).resolve()
@@ -824,12 +825,13 @@ if not keep_inventory_written:
     insert_at = 1 if compat_lines and compat_lines[0].strip().startswith("#Setup") else 0
     compat_lines.insert(insert_at, "gamerule keep_inventory false")
 init_function.write_text("\n".join(compat_lines) + "\n", encoding="utf-8")
-
+runtime_fix_report = apply_escher_runtime_fixes(DEST)
 (DEST / "FERN-COMPATIBILITY.md").write_text(
     "# Fern / Escher compatibility (Minecraft Java 26.3)\n\n"
     "This port is designed to run beside Forge Solo Subseason on Fabric. The `tid:` namespace remains intact, so Escher resources do not replace Fern's `forge_*` arenas or `fern` dimension.\n\n"
     "## Player entry and return\n\n"
-    "With the compatible Fern mod JAR installed, players can run `/waypoint dungeon` (alias `/waypoint escher`) to enter `tid:layer_1` at the Escher start platform, `(0, 55, 0)`. When entering from the Overworld, Fern saves the player's prior location; use `/fern return last` to return there, or `/fern return spawn` for the main-world spawn. The route reports a clear error if the Escher dimension is not loaded.\n\n"
+    "With the compatible Fern mod JAR installed, players can run `/waypoint dungeon` (alias `/waypoint escher`) to enter `tid:layer_1` at `(0, 55, 0)`. The datapack pre-carves the protected Layer 1 landing chamber during load, before a waypoint can place a player inside the flat stone. Fern tracks the last Overworld position while a player is online and provides `/fern return last` or `/fern return spawn`; the last-position map is in memory and resets on server restart. Escher no longer redirects players out of vanilla dimensions on every tick. The waypoint reports a clear error if Layer 1 is not loaded.\n\n"
+    "Portal routing uses stable `tid_portal_color_N` identity tags and a generic `tid_portal_marker` tag rather than custom-name selectors. Newly summoned and structure-loaded markers receive both tags at creation. A disposable live probe found that a legacy-style area-effect cloud retains its exact `CustomName` in 26.3 but does not retain its old `Color` NBT, so automatic migration cannot determine its destination safely. Before upgrading a world with already-spawned untagged markers, rebuild the affected markers from the current tagged structures/functions or manually retag them from a verified destination-color mapping; the pack fails closed instead of guessing. A per-player `tid_portal_contact` latch is set before transfer and cleared after the player leaves the sea-lantern floor, preventing repeated activation while standing on or immediately arriving at a portal.\n\n"
     "## Fern gameplay hooks\n\n"
     "Fern's owner-binding applies in Escher dimensions just as it does elsewhere: carried and crafted stacks are bound to their player outside Cornucopia, and the Escher Delver daily quest counts monster kills in any `tid:` dimension. The init function explicitly sets `keep_inventory false` so Fern can retain its permanent, owner-locked death drops and coordinate notices. This is a server-wide rule and is intentional for the requested Fern death behavior.\n\n"
     "The upstream `setworldspawn` call was removed to preserve the Fern server's existing Overworld spawn. Escher's unrelated global gamerule overrides for weather, phantoms, raids, patrols, traders, and command feedback were also removed. The upstream command-sequence limit is retained because procedural generation uses long function chains.\n\n"
@@ -837,7 +839,7 @@ init_function.write_text("\n".join(compat_lines) + "\n", encoding="utf-8")
     "1. Use Minecraft 26.3, Fabric, Java 25, and enable `enable-command-block=true` in `server.properties`.\n"
     "2. Install the matching Forge Solo Subseason Fabric JAR in `mods/`.\n"
     "3. Install this datapack in the active world's `datapacks/` directory, then fully restart the server so the `tid:` dimensions register.\n"
-    "4. Back up the world first. See `PORT-VALIDATION-26.3.md`, `FUNCTION-REPAIRS-26.3.md`, and `RUNTIME-VALIDATION-26.3.md`: active missing calls are repaired and the integrated Fabric/26.3 startup plus representative function smoke calls passed. Run a player-level generation/progression staging test before production.\n",
+    "4. Back up the world first. See `PORT-VALIDATION-26.3.md`, `FUNCTION-REPAIRS-26.3.md`, and `RUNTIME-VALIDATION-26.3.md`: active missing calls are repaired, portal dispatch uses stable tags, but already-spawned untagged portal markers must be rebuilt or manually retagged from a verified destination-color mapping because Minecraft 26.3 did not retain legacy `Color` in the live entity probe; no automatic migration is attempted. Active custom-name portal selectors are removed. The integrated Fabric/26.3 startup plus representative function smoke calls passed. Run a player-level portal walk-through before production; rerun the previously passing Layer 1 landing and `/fern return spawn` / `/fern return last` checks as regressions.\n",
     encoding="utf-8",
 )
 
@@ -880,7 +882,7 @@ missing_lines = [f"- `{ident}` — referenced at `{refs[0]}`" for ident, refs in
     + f"The pack retains **{len(comment_only_targets)}** missing target name(s) only inside comment lines. They are inactive and do not prevent execution.\n\n"
     + ("\n".join(f"- `{ident}` — `{refs[0]}`" for ident, refs in sorted(comment_only_targets.items())) if comment_only_targets else "No comment-only missing references found.")
     + "\n\n## Runtime smoke validation\n\n"
-    "The integrated Fabric 26.3 cold boot and representative function calls passed; see `RUNTIME-VALIDATION-26.3.md`.\n\n"
+    "The integrated Fabric 26.3 cold boot and representative function calls passed; see `RUNTIME-VALIDATION-26.3.md`. The runtime integration pass also statically verifies a pre-carved Layer 1 landing chamber, tagged teleporter summon sites and structure entities, stable-tag dispatch, no active custom-name portal selectors, and a per-player portal contact latch. The live probe found that 26.3 does not retain legacy `Color` on an untagged marker; existing markers require rebuilding or manual retagging from a verified destination-color mapping.\n\n"
     "## Validation boundary\n\n"
     "A zero-reference audit, clean startup, and representative smoke calls do not establish every random room layout, boss progression, or long-run performance. See `FUNCTION-REPAIRS-26.3.md` for recovered versus reconstructed behavior, and perform a player-level staging run before production.\n",
     encoding="utf-8",
@@ -894,8 +896,13 @@ missing_lines = [f"- `{ident}` — referenced at `{refs[0]}`" for ident, refs in
     "- The pack audit found zero unresolved active `tid:` function targets, and the server log contained no datapack/function parse failures.\n"
     "- Representative smoke calls to `tid:custom_mobs/war_pig`, `tid:dungeon/sand1/build_hall_south`, `tid:dungeon/sand2/build_hall_east`, and `tid:dungeon/station/generate_straggler_execute` ran without command errors.\n"
     "- The disposable server was stopped cleanly.\n\n"
+    "## Escher random-generation integration patch (2026-11-22)\n\n"
+    "- The runtime patcher tags all 16 teleporter summon sites and 8 structure portal markers with stable color and generic marker tags. A disposable live probe found that a legacy-style entity retained its exact `CustomName` but not its old `Color` NBT in Minecraft 26.3, so automatic identity migration would not be reliable. Existing untagged markers must be rebuilt or manually retagged from a verified destination-color mapping before upgrade. Normal routing uses stable tags; active custom-name selectors are removed, and a contact latch prevents repeat transfers. ZIP integrity, regression tests, and repeat-patch idempotence checks passed.\n"
+    "- The Fabric module build passed after adding Overworld return-position tracking every 10 server ticks and checking teleport success before reporting a return. The return-position map is currently in memory and is not persisted across server restarts.\n"
+    "- A fresh disposable Fabric 26.3 `runServer` directory auto-loaded the patched ZIP, reached the server-ready `Done` marker, and saved all registered `tid:` dimensions. The log had no datapack/function parse-error matches, and the server shut down cleanly. This validates loading only, not connected-player portal traversal.\n"
+    "- Wan’er’s preceding staging pass succeeded for the Layer 1 landing and `/fern return spawn` / `/fern return last`; keep these as regression checks for the next playtest.\n\n"
     "## Scope limit\n\n"
-    "This is startup/parser plus representative-call validation, not a full player-driven dungeon run. Procedural room connectivity, progression, every random branch, balance, and long-run performance still need a staging playtest. Non-blocking unrelated notices observed were vanilla piglin-barter loot-table parameter warnings and Fabric untranslated item-tag warnings.\n",
+    "These automated checks cover startup/parser, representative calls, and static integration checks; they are not a full player-driven dungeon run. The preceding staging pass succeeded for the Layer 1 landing and `/fern return spawn` / `/fern return last`; keep these as regressions. A player-driven portal walk-through is still needed to verify destination arrival, no bounce-back, and walking back through. Procedural room connectivity, progression, every random branch, balance, and long-run performance also need disposable staging playtests. Non-blocking unrelated notices observed were vanilla piglin-barter loot-table parameter warnings and Fabric untranslated item-tag warnings.\n",
     encoding="utf-8",
 )
 
@@ -909,4 +916,5 @@ if remaining:
 
 print(f"Copied {SOURCE} -> {DEST}")
 print(f"Updated pack metadata to {PACK_FORMAT}; singularized paths; migrated {biome_count} biomes, {dimension_type_count} dimension types, {predicate_count} predicates, {recipe_count} recipes, {loot_table_count} loot tables, {item_modifier_count} item modifiers and {advancement_count} advancements; converted {replace_count} replaceitem usages.")
-print("Function repairs applied; integrated 26.3 startup and representative smoke calls passed; full dungeon gameplay still needs staging validation.")
+print(f"Function repairs applied; Escher runtime integration fixes: {runtime_fix_report}.")
+print("Integrated 26.3 startup and representative smoke calls passed; full dungeon gameplay still needs staging validation.")

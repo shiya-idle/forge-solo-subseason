@@ -39,9 +39,9 @@ public final class FabricSkillEffects {
         try {
             PvpTargetingEngine.Resolution resolution = targeting.resolve(player, skill);
             if (requiresTarget(skill.action()) && !resolution.hasTarget()) { runtime.discard(ticket.get()); player.sendSystemMessage(Component.literal("§cNo visible PvP target in range; cast cancelled.")); return false; }
-            announceCast(player, skill, resolution);
             if (!apply(player, skill, resolution)) { runtime.discard(ticket.get()); player.sendSystemMessage(Component.literal("§cThis skill is unavailable until its protection provider is configured.")); return false; }
             if (!runtime.commit(ticket.get())) { player.sendSystemMessage(Component.literal("§cSkill state changed before commit; no mana or cooldown was consumed.")); return false; }
+            announceCast(player, skill, resolution);
             castHighlight(player, skill.action()); player.sendSystemMessage(Component.literal("§a✦ §f" + skill.displayName() + " §7activated.")); return true;
         } catch (RuntimeException error) { runtime.discard(ticket.get()); ForgeSoloFabric.LOGGER.warn("Skill {} failed safely", skill.id(), error); player.sendSystemMessage(Component.literal("§cSkill failed safely; no mana or cooldown was consumed.")); return false; }
     }
@@ -85,8 +85,38 @@ public final class FabricSkillEffects {
         String target = switch (skill.action()) { case KNOCKBACK, PROJECTILE_DAMAGE, SLOW, ROOT, ORE_PULL -> "aimed direction / nearest target"; case AREA_MINE, TREE_FELL -> "area around target point"; case HEAL, PURIFY, REGENERATION, ABSORPTION, ABSORB_DAMAGE -> "self / friendly target"; default -> "self"; };
         int range = targeting.range(player);
         Component message = Component.literal("[CAST " + id + "] " + skill.displayName() + " • range " + range + " blocks • " + target + " • hit: " + resolution.targetLabel()).withStyle(style -> style.withFont(new FontDescription.Resource(Identifier.parse("forge_solo:forge"))));
-        player.sendSystemMessage(message, true); ForgeSoloSounds.playCast(player, skill.action()); if (config.castTrail()) trail(player, ParticleTypes.END_ROD, range); if (resolution.predictedPoint() != null) visualizeAt(resolution.predictedPoint(), player, ParticleTypes.END_ROD, ParticleTypes.ELECTRIC_SPARK, 10);
+        player.sendSystemMessage(message, true);
+        ParticleOptions primary = castPrimary(skill.action());
+        ParticleOptions accent = castAccent(skill.action());
+        ForgeSoloSounds.playCast(player, skill.action());
+        if (config.castTrail()) trail(player, primary, range);
+        if (resolution.predictedPoint() != null) visualizeAt(resolution.predictedPoint(), player, primary, accent, 10);
     }
+
+    private ParticleOptions castPrimary(SkillAction action) {
+        return switch (action) {
+            case HEAL, REGENERATION, PURIFY, ABSORPTION, ABSORB_DAMAGE, DAMAGE_REDUCTION -> ParticleTypes.HEART;
+            case ROOT, SLOW -> ParticleTypes.SOUL;
+            case PROJECTILE_DAMAGE, ARROW_ACCURACY, ARROW_RECOVERY, KNOCKBACK -> ParticleTypes.CRIT;
+            case NIGHT_VISION, GLOW, ORE_SENSE, ORE_PULL, AREA_MINE -> ParticleTypes.ELECTRIC_SPARK;
+            case SPEED, HASTE, TREE_FELL, MATERIAL_BONUS, PASSIVE_DURABILITY, TOOL_REPAIR,
+                    FURNACE_SPEED, CRAFT_REFUND -> ParticleTypes.HAPPY_VILLAGER;
+            default -> ParticleTypes.ENCHANT;
+        };
+    }
+
+    private ParticleOptions castAccent(SkillAction action) {
+        return switch (action) {
+            case HEAL, REGENERATION, PURIFY, ABSORPTION, ABSORB_DAMAGE, DAMAGE_REDUCTION,
+                    NIGHT_VISION, GLOW, ORE_SENSE -> ParticleTypes.END_ROD;
+            case ROOT, SLOW -> ParticleTypes.SCULK_SOUL;
+            case PROJECTILE_DAMAGE, ARROW_ACCURACY, ARROW_RECOVERY, KNOCKBACK -> ParticleTypes.SWEEP_ATTACK;
+            case SPEED, HASTE, TREE_FELL, MATERIAL_BONUS, PASSIVE_DURABILITY, TOOL_REPAIR,
+                    FURNACE_SPEED, CRAFT_REFUND, ORE_PULL, AREA_MINE -> ParticleTypes.ELECTRIC_SPARK;
+            default -> ParticleTypes.HAPPY_VILLAGER;
+        };
+    }
+
     private void trail(ServerPlayer player, ParticleOptions particle, int range) { if (!QualityProfile.forPlayer(player.getUUID()).trails()) return; Vec3 origin = player.getEyePosition(); Vec3 direction = player.getLookAngle().normalize(); int points = Math.min(16, Math.max(4, (int) Math.round(range * QualityProfile.forPlayer(player.getUUID()).visualDensity()))); for (int i = 1; i <= points; i++) { double distance = (double) range * i / points; Vec3 point = origin.add(direction.scale(distance)); player.level().sendParticles(particle, point.x, point.y, point.z, 1, 0, 0, 0, 0); } }
     private void castHighlight(ServerPlayer player, SkillAction action) { if (!config.combatHighlights()) return; if (action == SkillAction.KNOCKBACK || action == SkillAction.PROJECTILE_DAMAGE || action == SkillAction.DAMAGE_REDUCTION) visualize(player, ParticleTypes.CRIT, ParticleTypes.ELECTRIC_SPARK, 10, false); }
     private void visualize(ServerPlayer player, ParticleOptions primary, ParticleOptions secondary, int count, boolean ring) { if (!config.visualsEnabled()) return; burst(player, primary, count); if (config.layeredParticles()) burst(player, secondary, Math.max(3, count / 3)); if (ring && config.ringsEnabled()) ring(player, primary); }

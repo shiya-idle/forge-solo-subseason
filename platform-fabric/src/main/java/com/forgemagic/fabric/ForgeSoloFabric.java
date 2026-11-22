@@ -303,8 +303,15 @@ public final class ForgeSoloFabric implements ModInitializer {
 
     private void tick(MinecraftServer server) {
         if (server.getTickCount() % 10 != 0) return;
+        List<ServerPlayer> tickPlayers = List.copyOf(server.getPlayerList().getPlayers());
+        for (ServerPlayer player : tickPlayers) {
+            if (isMainWorld(player)) {
+                lastMainWorldPlaces.put(player.getUUID(), new ReturnPoint(
+                        player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot()));
+            }
+        }
         pendingClaims.entrySet().removeIf(entry -> entry.getValue().expiresAtMillis() <= System.currentTimeMillis());
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : tickPlayers) {
             UUID id = player.getUUID();
             playerClasses.tick(player, 10L);
             if (!adminPolicy.isGranted(player) && classFor(player) == ClassId.NOVICE && playerClasses.needsArenaArrival(id)) {
@@ -504,7 +511,10 @@ public final class ForgeSoloFabric implements ModInitializer {
         if (server == null || !isMainWorld(player)) {
             ServerLevel overworld = server == null ? null : server.overworld();
             if (overworld == null) return 0;
-            player.teleportTo(overworld, point.x(), point.y(), point.z(), Set.of(), point.yaw(), point.pitch(), false);
+            if (!player.teleportTo(overworld, point.x(), point.y(), point.z(), Set.of(), point.yaw(), point.pitch(), false)) {
+                player.sendSystemMessage(Component.literal("§cThe server rejected the Last Seen Place teleport."));
+                return 0;
+            }
             player.sendSystemMessage(Component.literal("§aReturned to your Last Seen Place in the main world."));
             return 1;
         }
@@ -516,7 +526,11 @@ public final class ForgeSoloFabric implements ModInitializer {
         ServerLevel overworld = server.overworld();
         var respawn = overworld.getRespawnData();
         var spawn = respawn.pos();
-        player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, Set.of(), respawn.yaw(), respawn.pitch(), false);
+        if (!player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+                Set.of(), respawn.yaw(), respawn.pitch(), false)) {
+            player.sendSystemMessage(Component.literal("§cThe server rejected the main-world spawn teleport."));
+            return 0;
+        }
         player.sendSystemMessage(Component.literal("§aReturned to the main-world spawn."));
         return 1;
     }

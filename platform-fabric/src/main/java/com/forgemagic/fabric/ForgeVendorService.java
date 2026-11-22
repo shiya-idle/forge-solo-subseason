@@ -82,7 +82,13 @@ public final class ForgeVendorService {
         if (total > Integer.MAX_VALUE || !takeEmeralds(player, (int) total)) { player.sendSystemMessage(Component.literal("§cYou need " + total + " emeralds.")); return false; }
         available.consume(amount);
         save();
-        player.addItem(new ItemStack(offer.item(), amount));
+        ItemStack output = new ItemStack(offer.item(), amount);
+        output.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(offer.name()));
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, output, tag -> {
+            tag.putString("fern_non_tradeable", "forge_vendor");
+            tag.putString("fern_vendor_offer", key);
+        });
+        if (!player.getInventory().add(output)) player.drop(output, false, net.minecraft.util.Prediction.SERVER_ONLY);
         for (int i = 0; i < amount; i++) modifiers.apply(player, key);
         player.sendSystemMessage(Component.literal("§aPurchased §f" + offer.name() + " §ax" + amount + "§a. Stock remaining: §f" + available.available()));
         return true;

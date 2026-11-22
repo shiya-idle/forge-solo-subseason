@@ -116,6 +116,8 @@ public final class CombirollService {
         save();
         ItemStack receipt = new ItemStack(Items.PAPER);
         receipt.set(DataComponents.CUSTOM_NAME, Component.literal(definition.name() + " Combiroll"));
+        net.minecraft.world.item.component.CustomData.update(DataComponents.CUSTOM_DATA, receipt,
+                tag -> tag.putBoolean("fern_combiroll_receipt", true));
         player.addItem(receipt);
         player.sendSystemMessage(Component.literal("§aCrafted §f" + definition.name() + " §7(" + definition.rarity().name().toLowerCase(Locale.ROOT) + ")§a. Use §f/forge combiroll cast " + definition.key().replace('+', ' ') + "§a."));
         return true;

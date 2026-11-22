@@ -51,6 +51,11 @@ public final class FernItemBindingService {
         });
     }
 
+    /** Rebinds a legitimately transferred stack after PlayerTradeService has validated Cornucopia. */
+    public static void transferForTrade(ItemStack stack, UUID newOwner) {
+        transfer(stack, newOwner);
+    }
+
     public static boolean isPermanentDeathDrop(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
