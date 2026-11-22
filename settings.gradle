@@ -9,3 +9,4 @@ pluginManagement {
 rootProject.name = 'forge-solo-subseason'
 
 include 'core-api', 'core-common', 'module-data', 'module-ledger', 'module-classes', 'module-season', 'module-routes', 'module-skills', 'module-mobs-coins', 'module-quests', 'module-orbs', 'module-boombai', 'module-leveling', 'module-claims', 'platform-paper', 'platform-velocity', 'platform-fabric'
+include 'module-armaments'

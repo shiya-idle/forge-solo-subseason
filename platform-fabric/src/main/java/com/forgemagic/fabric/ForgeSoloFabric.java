@@ -3,6 +3,8 @@ package com.forgemagic.fabric;
 import com.forgemagic.api.ClassId;
 import com.forgemagic.api.ManaState;
 import com.forgemagic.api.SkillDefinition;
+import com.forgemagic.armaments.ArmamentCatalog;
+import com.forgemagic.armaments.WeaponDefinition;
 import com.forgemagic.claims.ImmutableClaimsService;
 import com.forgemagic.claims.ThreeFactorConfirmation;
 import com.forgemagic.skills.ContentCatalog;
@@ -41,8 +43,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -402,7 +406,27 @@ public final class ForgeSoloFabric implements ModInitializer {
         if (clazz == ClassId.NOVICE) {
             return showClassChangePanel(player);
         }
-        var skills = ContentCatalog.routeSkills(clazz);
+        WeaponDefinition weapon = ClassWeaponService.weaponFor(player, clazz);
+        if (weapon == null) {
+            player.sendSystemMessage(Component.literal("§cYou need your Fern class weapon before opening its skill panel."));
+            return 0;
+        }
+        if (!weapon.allowedInWorld(player.level().dimension().identifier().toString())) {
+            player.sendSystemMessage(Component.literal("§cThis weapon's abilities are disabled in the current world."));
+            return 0;
+        }
+        var skills = ArmamentCatalog.panelSkills(weapon, ContentCatalog.routeSkills(clazz));
+        if (BedrockCompatibility.isBedrockPlayer(player.getUUID())
+                && BedrockFormService.showSkillPanel(player, skills, skillId -> cast(player, skillId))) {
+            return 1;
+        }
+        if (readyCompanions.containsKey(player.getUUID())
+                && ServerPlayNetworking.canSend(player, ForgeSoloPayloads.PANEL_OPEN_TYPE)) {
+            String skillIds = skills.stream().map(SkillDefinition::id).collect(Collectors.joining(","));
+            String definitionId = weapon == null ? "fern:unknown" : weapon.id();
+            ServerPlayNetworking.send(player, new ForgeSoloPayloads.PanelOpenPayload(clazz.name() + "|" + definitionId + "|" + skillIds));
+            return 1;
+        }
         player.sendSystemMessage(Component.literal("§2§l✦ FORGE / SKILL DECK")
                 .withStyle(style -> style.withFont(new FontDescription.Resource(Identifier.parse("forge_solo:forge")))));
         player.sendSystemMessage(Component.literal("§8CLASS §f" + clazz.name() + "  §8•  §9MANA §f" + manaText(player)
@@ -420,6 +444,10 @@ public final class ForgeSoloFabric implements ModInitializer {
     }
     private int showClassChangePanel(ServerPlayer player) {
         ClassId current = classFor(player);
+        if (BedrockCompatibility.isBedrockPlayer(player.getUUID())) {
+            List<ClassId> options = List.of(ClassId.LUMBER, ClassId.MINER, ClassId.CRAFTSMAN, ClassId.MARKSMAN, ClassId.HEALER);
+            if (BedrockFormService.showClassPanel(player, options, chosen -> chooseClass(player, chosen.name()))) return 1;
+        }
         player.sendSystemMessage(Component.literal("§d§lCLASS CHANGE PANEL §8— §fClass Change Arena only"));
         if (current != ClassId.NOVICE) {
             player.sendSystemMessage(Component.literal("§aYour permanent class is §f" + current.name() + "§a. Class changes are locked after selection."));
@@ -505,7 +533,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private int chooseClass(ServerPlayer player, String value) { ClassId chosen; try { chosen = ClassId.valueOf(value.toUpperCase(java.util.Locale.ROOT)); } catch (IllegalArgumentException error) { player.sendSystemMessage(Component.literal("§cUnknown class. Choose HEALER, MINER, MARKSMAN, LUMBER, or CRAFTSMAN.")); return 0; } if (!playerClasses.choose(player, chosen)) { player.sendSystemMessage(Component.literal("§cYou cannot choose that class yet, or you already have a permanent class.")); return 0; } ClassWeaponService.grantIfMissing(player, chosen); player.sendSystemMessage(Component.literal("§aClass selected: §f" + chosen.name() + "§a.")); return 1; }
     private int bind(ServerPlayer player, int slot, String skillId) { if (ContentCatalog.routeSkills(classFor(player)).stream().noneMatch(skill -> skill.id().equals(skillId))) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } bindings.computeIfAbsent(player.getUUID(), ignored -> new ConcurrentHashMap<>()).put(slot, skillId); player.sendSystemMessage(Component.literal("§aBound §f" + skillId + " §ato slot §f" + slot + "§a.")); return 1; }
     private int unbind(ServerPlayer player, int slot) { Map<Integer, String> playerBindings = bindings.get(player.getUUID()); if (playerBindings != null) playerBindings.remove(slot); player.sendSystemMessage(Component.literal("§7Cleared skill slot §f" + slot + "§7.")); return 1; }
-    private int cast(ServerPlayer player, String skillId) { SkillDefinition skill = ContentCatalog.routeSkills(classFor(player)).stream().filter(candidate -> candidate.id().equals(skillId)).findFirst().orElse(null); if (skill == null) { player.sendSystemMessage(Component.literal("§cUnknown skill id.")); return 0; } skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID())); return effects.cast(player, skill, adminPolicy.playerLevel(player), adminPolicy.skillLevel(player)) ? 1 : 0; }
+    private int cast(ServerPlayer player, String skillId) { ClassId clazz = classFor(player); WeaponDefinition weapon = ClassWeaponService.weaponFor(player, clazz); if (weapon == null) { player.sendSystemMessage(Component.literal("§cYou need your Fern class weapon to cast class skills.")); return 0; } if (!weapon.allowedInWorld(player.level().dimension().identifier().toString())) { player.sendSystemMessage(Component.literal("§cThis weapon's abilities are disabled in the current world.")); return 0; } var routeSkills = ContentCatalog.routeSkills(clazz); SkillDefinition skill = routeSkills.stream().filter(candidate -> candidate.id().equals(skillId)).findFirst().orElse(null); if (skill == null || !ArmamentCatalog.panelSkills(weapon, routeSkills).contains(skill)) { player.sendSystemMessage(Component.literal("§cThat skill is not mapped to your Fern weapon.")); return 0; } skillRuntime.setCooldownReduction(player.getUUID(), progression.cooldownReduction(player.getUUID())); return effects.cast(player, skill, adminPolicy.playerLevel(player), adminPolicy.skillLevel(player)) ? 1 : 0; }
     private int setManaHud(ServerPlayer player, boolean enabled) { settings.put(player.getUUID(), new PlayerSettings(enabled)); player.sendSystemMessage(Component.literal(enabled ? "§aMana indicator enabled." : "§7Mana indicator disabled.")); return 1; }
     private void sendLegacyHud(ServerPlayer player) { player.sendSystemMessage(Component.literal("§c❤ " + healthText(player) + " §b✦ " + manaText(player) + " §3💧 " + thirst.bar(player.getUUID())), true); }
     private ClassId classFor(ServerPlayer player) { ClassId granted = adminPolicy.classFor(player, ClassId.NOVICE); return granted != ClassId.NOVICE ? granted : java.util.Optional.ofNullable(playerClasses.get(player.getUUID())).orElse(ClassId.NOVICE); }

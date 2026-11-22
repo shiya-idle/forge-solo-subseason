@@ -19,5 +19,8 @@ public final class ForgeSoloClient implements ClientModInitializer {
                 });
         ClientPlayNetworking.registerGlobalReceiver(ForgeSoloPayloads.HUD_SNAPSHOT_TYPE,
                 (payload, context) -> context.client().execute(() -> ForgeSoloClientState.apply(payload.data())));
+        ClientPlayNetworking.registerGlobalReceiver(ForgeSoloPayloads.PANEL_OPEN_TYPE,
+                (payload, context) -> context.client().execute(() ->
+                        context.client().setScreenAndShow(new ForgeSoloPanelScreen(payload.data()))));
     }
 }

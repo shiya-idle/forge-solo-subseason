@@ -21,7 +21,9 @@ Bedrock Edition cannot load a Java Fabric client mod. Bedrock players therefore 
 2. Keep Floodgate authentication enabled and verify that Bedrock players are recognized by the Floodgate API.
 3. The Fern server detects Floodgate players without a hard compile-time dependency.
 4. Bedrock players bypass the Java companion handshake and receive a server-side action-bar HUD showing health, mana, and thirst.
-5. The required Java resource-pack rule must be tested with the selected Geyser version. If the pack is not usable by Bedrock, keep critical information in the action bar and do not make Bedrock access depend on client-only overlays.
+5. When Floodgate/Cumulus is available, `/skills panel` and class selection open native Bedrock forms with the same weapon-mapped buttons as the Java client panel. Form callbacks call the same server-authoritative cast/class routes; they do not accept client gameplay values.
+6. If Floodgate/Cumulus is unavailable or its optional API is not compatible, Fern falls back to the existing tappable server-chat buttons. No Bedrock player is disconnected or locked out because a form API is missing.
+7. The required Java resource-pack rule must be tested with the selected Geyser version. If the pack is not usable by Bedrock, keep critical information in the action bar and do not make Bedrock access depend on client-only overlays.
 
 The Bedrock path is not a Java client mod. It is a server-side compatibility version of the HUD and gameplay systems. Skills, claims, thirst, vendor effects, and PvP rules remain server-authoritative and work for both Java and Bedrock players.
 
@@ -33,6 +35,6 @@ Before opening the server:
 2. Confirm the client jar contains both `main` and `client` entrypoints.
 3. Test a Java client with the companion: it should join and show `Fern client companion verified.`
 4. Test a vanilla Java client: it should be disconnected with the installation message.
-5. Test a Floodgate Bedrock player: it should bypass the Java handshake and receive the action-bar fallback.
+5. Test a Floodgate Bedrock player: it should bypass the Java handshake, receive the action-bar fallback values, and receive a native form from `/skills panel` when Cumulus is available.
 6. Test a Java player whose companion has the wrong protocol: it should be rejected.
 7. Upload the resource pack to HTTPS and set the real URL and SHA-1 in `server.properties`.
