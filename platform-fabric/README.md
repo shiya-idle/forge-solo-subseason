@@ -14,6 +14,10 @@ A resource pack can reskin the panel, icons, slot backgrounds, fonts, and sounds
 
 The initial signature skills now use bounded layered particle compositions instead of a single generic burst. Each cast can combine a primary particle, an accent particle, and a ground ring, with themed families for nature, arcane, radiant, shadow, and impact skills. The YAML controls density, ring radius, ring points, layered particles, and combat highlights. The hard particle cap remains active so visual quality cannot turn into an unbounded performance cost. A resource pack can add matching icon, sound, and font styling through the named visual profiles without granting the client authority over effects.
 
+## On-demand music
+
+Players can use `/fern music` or `/fern music list` to see available Minecraft music-disc tracks, `/fern music play <track>` to play one just for themselves, and `/fern music stop` to stop it. Playback is opt-in and does not replace Minecraft's normal ambient soundtrack or custom sound registry entries. Java clients play the selected track locally as background music; Bedrock clients receive the matching vanilla sound through the server.
+
 ## Persistent immutable claims
 
 Claims are stored atomically in `config/forge-claims.yml` and loaded before block-event handlers are enabled. If that file cannot be read or written, claim creation is disabled rather than risking a claim that disappears after restart. Normal players can stage a request with `/claims request <minX> <minY> <minZ> <maxX> <maxY> <maxZ>`, then confirm within five minutes using `/claims confirm <server-code> CLAIM_FOREVER I_UNDERSTAND`. The server code, exact intent phrase, and explicit acknowledgement are three separate confirmations. Claims cannot be deleted or resized by normal players, and overlapping claims are rejected.

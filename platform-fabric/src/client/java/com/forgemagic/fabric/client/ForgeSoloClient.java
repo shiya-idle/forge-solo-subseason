@@ -2,6 +2,7 @@ package com.forgemagic.fabric.client;
 
 import com.forgemagic.fabric.ForgeSoloPayloads;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 /** Optional Java client companion initializer. */
@@ -22,5 +23,9 @@ public final class ForgeSoloClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ForgeSoloPayloads.PANEL_OPEN_TYPE,
                 (payload, context) -> context.client().execute(() ->
                         context.client().setScreenAndShow(new ForgeSoloPanelScreen(payload.data()))));
+        ClientPlayNetworking.registerGlobalReceiver(ForgeSoloPayloads.MUSIC_CONTROL_TYPE,
+                (payload, context) -> context.client().execute(() -> ForgeSoloMusicPlayer.handle(payload)));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                client.execute(ForgeSoloMusicPlayer::stop));
     }
 }

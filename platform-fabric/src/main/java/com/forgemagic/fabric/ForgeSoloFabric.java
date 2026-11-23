@@ -71,6 +71,7 @@ public final class ForgeSoloFabric implements ModInitializer {
     private final FernQuestBoardService questBoard = new FernQuestBoardService();
     private final FernWaypointService waypoints = new FernWaypointService();
     private final ThirstService thirst = new ThirstService();
+    private final FernMusicService music = new FernMusicService();
     private FernAdminPolicy adminPolicy;
     private final PlayerClassService playerClasses = new PlayerClassService();
     private final Map<UUID, Long> classArenaMissingNoticeAt = new ConcurrentHashMap<>();
@@ -141,6 +142,7 @@ public final class ForgeSoloFabric implements ModInitializer {
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID id = handler.getPlayer().getUUID();
+            music.clear(id);
             pendingCompanions.remove(id);
             readyCompanions.remove(id);
         });
@@ -193,6 +195,15 @@ public final class ForgeSoloFabric implements ModInitializer {
             var questNpcCommand = Commands.literal("questnpc").requires(adminCommand)
                     .then(Commands.literal("spawn").executes(ctx -> { questBoard.spawnNpc(ctx.getSource().getPlayerOrException()); return 1; }));
             dispatcher.register(Commands.literal("fern").then(mobCommand).then(questNpcCommand));
+            var musicCommand = Commands.literal("music")
+                    .executes(ctx -> music.list(ctx.getSource().getPlayerOrException()))
+                    .then(Commands.literal("list").executes(ctx -> music.list(ctx.getSource().getPlayerOrException())))
+                    .then(Commands.literal("stop").executes(ctx -> music.stop(ctx.getSource().getPlayerOrException())))
+                    .then(Commands.literal("play")
+                            .then(Commands.argument("track", StringArgumentType.word())
+                                    .suggests((ctx, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(FernMusicTracks.keys(), builder))
+                                    .executes(ctx -> music.play(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "track")))));
+            dispatcher.register(Commands.literal("fern").then(musicCommand));
             dispatcher.register(Commands.literal("craftsman")
                     .executes(ctx -> { craftsman.show(ctx.getSource().getPlayerOrException(), classFor(ctx.getSource().getPlayerOrException())); return 1; })
                     .then(Commands.literal("craft")

@@ -18,6 +18,8 @@ public final class ForgeSoloPayloads {
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(CHANNEL, "companion_hello"));
     public static final CustomPacketPayload.Type<HudSnapshotPayload> HUD_SNAPSHOT_TYPE =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(CHANNEL, "hud_snapshot"));
+    public static final CustomPacketPayload.Type<MusicControlPayload> MUSIC_CONTROL_TYPE =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(CHANNEL, "music_control"));
     public static final CustomPacketPayload.Type<PanelOpenPayload> PANEL_OPEN_TYPE =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(CHANNEL, "panel_open"));
 
@@ -33,6 +35,10 @@ public final class ForgeSoloPayloads {
     public static final StreamCodec<RegistryFriendlyByteBuf, HudSnapshotPayload> HUD_SNAPSHOT_CODEC =
             StreamCodec.composite(ByteBufCodecs.STRING_UTF8, HudSnapshotPayload::data,
                     HudSnapshotPayload::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, MusicControlPayload> MUSIC_CONTROL_CODEC =
+            StreamCodec.composite(ByteBufCodecs.STRING_UTF8, MusicControlPayload::track,
+                    ByteBufCodecs.BOOL, MusicControlPayload::stop,
+                    MusicControlPayload::new);
     public static final StreamCodec<RegistryFriendlyByteBuf, PanelOpenPayload> PANEL_OPEN_CODEC =
             StreamCodec.composite(ByteBufCodecs.STRING_UTF8, PanelOpenPayload::data,
                     PanelOpenPayload::new);
@@ -42,6 +48,7 @@ public final class ForgeSoloPayloads {
     public static void registerCommon() {
         PayloadTypeRegistry.clientboundPlay().register(COMPANION_CHALLENGE_TYPE, COMPANION_CHALLENGE_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HUD_SNAPSHOT_TYPE, HUD_SNAPSHOT_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MUSIC_CONTROL_TYPE, MUSIC_CONTROL_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(PANEL_OPEN_TYPE, PANEL_OPEN_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(COMPANION_HELLO_TYPE, COMPANION_HELLO_CODEC);
     }
@@ -56,6 +63,10 @@ public final class ForgeSoloPayloads {
 
     public record HudSnapshotPayload(String data) implements CustomPacketPayload {
         @Override public Type<? extends CustomPacketPayload> type() { return HUD_SNAPSHOT_TYPE; }
+    }
+
+    public record MusicControlPayload(String track, boolean stop) implements CustomPacketPayload {
+        @Override public Type<? extends CustomPacketPayload> type() { return MUSIC_CONTROL_TYPE; }
     }
 
     public record PanelOpenPayload(String data) implements CustomPacketPayload {
